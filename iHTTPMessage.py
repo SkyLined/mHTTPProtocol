@@ -258,10 +258,10 @@ class iHTTPMessage(object):
     if oSelf.sVersion.upper() != "HTTP/1.1":
       bCloseConnectionInsteadOfUsingContentLength = True;
     if bCloseConnectionInsteadOfUsingContentLength:
-      oSelf.oHeaders.fbReplaceHeaderForNameAndValue("Connection", "Close");
+      oSelf.oHeaders.fbReplaceHeadersForName("Connection", "Close");
       oSelf.oHeaders.fbRemoveHeadersForName("Content-Length");
     else:
-      oSelf.oHeaders.fbReplaceHeaderForNameAndValue("Content-Length", str(len(sBody)));
+      oSelf.oHeaders.fbReplaceHeadersForName("Content-Length", str(len(sBody)));
     oSelf.__szBody = fsASCII(sBody, "Body");
     oSelf.__azsBodyChunks = None;
 
@@ -278,7 +278,7 @@ class iHTTPMessage(object):
       assert sBodyChunk, \
           "Cannot add empty body chunks";
     oSelf.oHeaders.fbRemoveHeadersForName("Content-Length");
-    oSelf.oHeaders.foAddHeaderForNameAndValue("Transfer-Encoding", "Chunked");
+    oSelf.oHeaders.fbReplaceHeadersForName("Transfer-Encoding", "Chunked");
     oSelf.__szBody = None;
     oSelf.__azsBodyChunks = asBodyChunks[:];
   
@@ -356,7 +356,7 @@ class iHTTPMessage(object):
   @ShowDebugOutput
   def fSetBasicAuthorization(oSelf, sUserName, sPassword):
     sBase64EncodedUserNameColonPassword = base64.b64encode("%s:%s" % (sUserName, sPassword));
-    oSelf.oHeaders.foAddHeaderForNameAndValue("Authorization", "basic %s" % sBase64EncodedUserNameColonPassword);
+    oSelf.oHeaders.fbReplaceHeadersForName("Authorization", "basic %s" % sBase64EncodedUserNameColonPassword);
   
   def fsSerialize(oSelf):
     return "\r\n".join([
