@@ -188,8 +188,8 @@ class cURL(object):
     szPath = UNSPECIFIED, szQuery = UNSPECIFIED, szFragment = UNSPECIFIED
   ):
     return cURL(
-      sProtocol = szProtocol if szProtocol is not UNSPECIFIED else oSelf.__szProtocol,
-      sHostname = szHostname if szHostname is not UNSPECIFIED else oSelf.__szHostname,
+      sProtocol = szProtocol if szProtocol is not UNSPECIFIED else oSelf.__sProtocol,
+      sHostname = szHostname if szHostname is not UNSPECIFIED else oSelf.__sHostname,
       uzPort = uzPort if uzPort is not UNSPECIFIED else oSelf.__uzPort,
       szPath = szPath if szPath is not UNSPECIFIED else oSelf.__sPath,
       szQuery = szQuery if szQuery is not UNSPECIFIED else oSelf.__szQuery,
