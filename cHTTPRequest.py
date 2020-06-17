@@ -1,5 +1,6 @@
 from mDebugOutput import ShowDebugOutput, fShowDebugOutput;
 from .cHTTPHeaders import cHTTPHeaders;
+from .cHTTPResponse import cHTTPResponse;
 from .iHTTPMessage import iHTTPMessage;
 from cURL import cURL;
 
@@ -58,26 +59,26 @@ class cHTTPRequest(iHTTPMessage):
     uzStatusCode = None, szMediaType = None, szBody = None,
     szVersion = None, szReasonPhrase = None, ozHeaders = None, szData = None, azsBodyChunks = None, szCharSet = None
   ):
-    uStatusCode = uzStatusCode or 200;
     sVersion = szVersion or oSelf.sVersion;
-    szMediaType = szMediaType if szMediaType else "text/plain" if (szBody or szData or axsBodyChunks) else None;
-    oHeaders = oHeaders or cHTTPHeaders.foDefaultHeadersForVersion(sVersion);
     oResponse = cHTTPResponse(
-      sVersion = sVersion,
-      uStatusCode = uStatusCode,
-      sReasonPhrase = sReasonPhrase,
-      oHeaders = oHeaders,
-      sBody = sBody,
-      sData = sData,
-      asBodyChunks = asBodyChunks,
+      szVersion = sVersion,
+      uzStatusCode = uzStatusCode or 200,
+      szReasonPhrase = szReasonPhrase,
+      ozHeaders = ozHeaders or cHTTPHeaders.foDefaultHeadersForVersion(sVersion),
+      szBody = szBody,
+      szData = szData,
+      azsBodyChunks = azsBodyChunks,
     );
-    if szMediaType:
-      assert isinstance(szMediaType, (str, unicode)), \
-          "szMediaType must be a string or None, not %s" % repr(sMediaType);
-      oResponse.szMediaType = str(szMediaType);
+    if szMediaType or szBody or szData or axsBodyChunks:
+      assert szMediaType is None or isinstance(szMediaType, (str, unicode)), \
+          "szMediaType must be a string or None, not %s" % repr(szMediaType);
+      oResponse.szMediaType = str(szMediaType or "application/octet-stream");
       if szCharSet:
         assert isinstance(szCharSet, (str, unicode)), \
             "szCharSet must be a string or None, not %s" % repr(szCharSet);
         oResponse.szCharSet = str(szCharSet);
+    else:
+      assert szCharSet is None, \
+          "szCharSet (%s) cannot be defined without a media type!" % repr(szCharSet);
     return oResponse;
   
