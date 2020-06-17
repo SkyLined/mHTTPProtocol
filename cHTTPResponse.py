@@ -33,12 +33,12 @@ class cHTTPResponse(iHTTPMessage):
     return {"szVersion": sVersion, "uzStatusCode": uStatusCode, "szReasonPhrase": sReasonPhrase};
   
   @ShowDebugOutput
-  def __init__(oSelf, szVersion = None, uzStatusCode = None, szReasonPhrase = None, ozHeaders = None, szBody = None, szData = None, azsBodyChunks = None, ozAdditionalHeaders = None):
+  def __init__(oSelf, szVersion = None, uzStatusCode = None, szReasonPhrase = None, ozHeaders = None, szBody = None, szData = None, azsBodyChunks = None, ozAdditionalHeaders = None, bAutomaticallyAddContentLengthHeader = False):
     assert uzStatusCode is None or (isinstance(uzStatusCode, (long, int)) and uzStatusCode in xrange(100, 600)), \
         "Status code must be an unsigned integer in the range 100-999, not %s" % repr(uzStatusCode);
     oSelf.uStatusCode = uzStatusCode;
     oSelf.sReasonPhrase = szReasonPhrase;
-    iHTTPMessage.__init__(oSelf, szVersion, ozHeaders, szBody, szData, azsBodyChunks, ozAdditionalHeaders);
+    iHTTPMessage.__init__(oSelf, szVersion, ozHeaders, szBody, szData, azsBodyChunks, ozAdditionalHeaders, bAutomaticallyAddContentLengthHeader);
   
   @property
   def uStatusCode(oSelf):

@@ -68,7 +68,7 @@ class iHTTPMessage(object):
     return oSelf.oHeaders.fbHasUniqueValueForName(sName, sValue, oSelf.ozAdditionalHeaders);
   
   @ShowDebugOutput
-  def __init__(oSelf, szVersion = None, ozHeaders = None, szBody = None, szData = None, azsBodyChunks = None, ozAdditionalHeaders = None):
+  def __init__(oSelf, szVersion = None, ozHeaders = None, szBody = None, szData = None, azsBodyChunks = None, ozAdditionalHeaders = None, bAutomaticallyAddContentLengthHeader = False):
     assert szBody is None or szData is None, \
           "Cannot provide both sBody (%s) and sData (%s)!" % (repr(szBody), repr(szData));
     assert szBody is None or azsBodyChunks is None, \
@@ -79,6 +79,16 @@ class iHTTPMessage(object):
     oSelf.oHeaders = ozHeaders or cHTTPHeaders.foDefaultHeadersForVersion(oSelf.sVersion);
     oSelf.ozAdditionalHeaders = ozAdditionalHeaders;
     oSelf.__szBody = fsASCII(szBody, "Body") if szBody is not None else None;
+    if szBody is not None:
+      oContentLengthHeader = oSelf.oHeaders.fozGetUniqueHeaderForName("Content-Length");
+      if oContentLengthHeader is None:
+        assert bAutomaticallyAddContentLengthHeader, \
+            "Cannot provide szBody (%s) without a Content-Length header or setting bAutomaticallyAddContentLengthHeader!" % repr(szBody);
+        oSelf.oHeaders.foAddHeaderForNameAndValue("Content-Length", str(len(oSelf.__szBody)));
+      else:
+        assert long(oContentLengthHeader.sValue) == len(oSelf.__szBody), \
+            "Cannot provide %d bytes szBody (%s) with a Content-Length: %s header!" % \
+            (len(szBody), repr(szBody), oContentLengthHeader.sValue);
     oSelf.__azsBodyChunks = azsBodyChunks[:] if azsBodyChunks is not None else [] if oSelf.bChunked else None;
     assert oSelf.__azsBodyChunks is None or oSelf.bChunked, \
           "Cannot provide asBodyChunks (%s) without a Transfer-Encoded: Chunked header!" % repr(azsBodyChunks);

@@ -29,7 +29,7 @@ class cHTTPRequest(iHTTPMessage):
     return {"szMethod": sMethod, "sURL": sURL, "szVersion": sVersion};
   
   @ShowDebugOutput
-  def __init__(oSelf, sURL, szMethod = None, szVersion = None, ozHeaders = None, szBody = None, szData = None, azsBodyChunks = None, ozAdditionalHeaders = None):
+  def __init__(oSelf, sURL, szMethod = None, szVersion = None, ozHeaders = None, szBody = None, szData = None, azsBodyChunks = None, ozAdditionalHeaders = None, bAutomaticallyAddContentLengthHeader = False):
     oSelf.__sURL = sURL;
     oSelf.__sMethod = szMethod or ("POST" if (szBody or szData or azsBodyChunks) else "GET");
     oHeaders = ozHeaders or cHTTPHeaders.foFromDict({
@@ -39,7 +39,7 @@ class cHTTPRequest(iHTTPMessage):
       "Connection": "Keep-Alive",
       "Pragma": "No-Cache",
     });
-    iHTTPMessage.__init__(oSelf, szVersion, oHeaders, szBody, szData, azsBodyChunks, ozAdditionalHeaders);
+    iHTTPMessage.__init__(oSelf, szVersion, oHeaders, szBody, szData, azsBodyChunks, ozAdditionalHeaders, bAutomaticallyAddContentLengthHeader);
   
   @property
   def sURL(oSelf):
