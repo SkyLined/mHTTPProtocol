@@ -18,9 +18,6 @@ class cHTTPHeaders(object):
     },
   };
 
-# Deprecated functions and their equivalent existing function:
-# fbRemoveValue => fbRemoveHeadersForName
-  
   @classmethod
   @ShowDebugOutput
   def foDefaultHeadersForVersion(cClass, sVersion):
