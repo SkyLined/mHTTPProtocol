@@ -90,26 +90,32 @@ class iHTTPMessage(object):
       assert oSelf.__azsBodyChunks is None, \
           "Unexpected asBodyChunks";
   
+  def __fSetContentTypeHeader(oSelf, szContentType, szCharset, szBoundary):
+    if szContentType is None:
+      oSelf.oHeaders.fbRemoveValue("Content-Type");
+    else:
+      sContentTypeHeaderValue = szContentType;
+      assert isinstance(szContentType, (str, unicode)) and szContentType.strip() and "\r" not in szContentType and "\n" not in szContentType, \
+          "szContentType must be None or a string that does contins at least one non-whitespace character and does not contain '\\r' or '\\n'";
+      if szCharset:
+        assert isinstance(szCharset, (str, unicode)) and szCharset.strip() and "\r" not in szCharset and "\n" not in szCharset, \
+            "szCharset must be None or a string that does contins at least one non-whitespace character and does not contain '\\r' or '\\n'";
+        sContentTypeHeaderValue += "; charset=" + str(szCharset);
+      if szBoundary:
+        assert isinstance(szBoundary, (str, unicode)) and szBoundary.strip() and "\r" not in szBoundary and "\n" not in szBoundary, \
+            "szBoundary must be None or a string that does contins at least one non-whitespace character and does not contain '\\r' or '\\n'";
+        sContentTypeHeaderValue += "; boundary=" + str(szBoundary);
+      oSelf.oHeaders.fbReplaceHeadersForName("Content-Type", sContentTypeHeaderValue);
+    if oSelf.ozAdditionalHeaders:
+      oSelf.ozAdditionalHeaders.fbRemoveHeadersForName("Content-Type");
+  
   @property
-  @ShowDebugOutput
   def szMediaType(oSelf):
     ozContentTypeHeader = oSelf.fozHeadersGetUnique("Content-Type");
     return ozContentTypeHeader.sValue.split(";")[0].strip() if ozContentTypeHeader else None;
-  
   @szMediaType.setter
-  @ShowDebugOutput
   def szMediaType(oSelf, szValue):
-    if szValue is None:
-      oSelf.oHeaders.fbRemoveValue("Content-Type");
-    else:
-      sContentType = szValue;
-      szCharset = oSelf.szCharset;
-      if szCharset:
-        sContentType += "; charset=" + szCharset;
-      szBoundary = oSelf.szBoundary;
-      if szBoundary:
-        sContentType += "; boundary=" + szBoundary;
-      oSelf.oHeaders.foAddHeaderForNameAndValue("Content-Type", sContentType);
+    oSelf.__fSetContentTypeHeader(szValue, oSelf.szCharset, oSelf.szBoundary);
   
   @property
   @ShowDebugOutput
@@ -119,34 +125,17 @@ class iHTTPMessage(object):
   @szCharset.setter
   @ShowDebugOutput
   def szCharset(oSelf, szValue):
-    sContentType = oSelf.szMediaType;
-    assert sContentType is not None, \
-        "Cannot set a charset without a media type!";
-    if szValue is not None:
-      sContentType += "; charset=" + szValue;
-    szBoundary = oSelf.szBoundary;
-    if szBoundary:
-      sContentType += "; boundary=" + szBoundary;
-    oSelf.oHeaders.foAddHeaderForNameAndValue("Content-Type", sContentType);
-    if oSelf.ozAdditionalHeaders:
-      oSelf.ozAdditionalHeaders.fbRemoveValue("Content-Type");
+    oSelf.__fSetContentTypeHeader(oSelf.szMediaType, szValue, oSelf.szBoundary);
   
   @property
   @ShowDebugOutput
-  def sBoundary(oSelf):
+  def szBoundary(oSelf):
     ozContentTypeHeader = oSelf.fozHeadersGetUnique("Content-Type");
     return ozContentTypeHeader and ozContentTypeHeader.fszGetNamedValue("boundary");
-  @sBoundary.setter
+  @szBoundary.setter
   @ShowDebugOutput
-  def sBoundary(oSelf, sValue):
-    sContentType = oSelf.sMediaType;
-    assert sContentType is not None, \
-        "Cannot set a boundary without a media type!";
-    szCharset = oSelf.szCharset;
-    if szCharset is not None:
-      sContentType += "; charset=" + szCharset;
-    sContentType += "; boundary=" + sValue;
-    oSelf.oHeaders.foAddHeaderForNameAndValue("Content-Type", sContentType);
+  def szBoundary(oSelf, szValue):
+    oSelf.__fSetContentTypeHeader(oSelf.szMediaType, oSelf.szCharset, szValue);
   
   @property
   @ShowDebugOutput
