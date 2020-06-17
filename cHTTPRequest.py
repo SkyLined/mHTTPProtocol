@@ -1,4 +1,13 @@
-from mDebugOutput import ShowDebugOutput, fShowDebugOutput;
+try: # mDebugOutput use is Optional
+  from mDebugOutput import *;
+except: # Do nothing if not available.
+  ShowDebugOutput = lambda fxFunction: fxFunction;
+  fShowDebugOutput = lambda sMessage: None;
+  fEnableDebugOutputForModule = lambda mModule: None;
+  fEnableDebugOutputForClass = lambda cClass: None;
+  fEnableAllDebugOutput = lambda: None;
+  cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
+
 from .cHTTPHeaders import cHTTPHeaders;
 from .cHTTPResponse import cHTTPResponse;
 from .iHTTPMessage import iHTTPMessage;

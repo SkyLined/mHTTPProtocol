@@ -1,4 +1,15 @@
 import base64, zlib;
+
+try: # mDebugOutput use is Optional
+  from mDebugOutput import *;
+except: # Do nothing if not available.
+  ShowDebugOutput = lambda fxFunction: fxFunction;
+  fShowDebugOutput = lambda sMessage: None;
+  fEnableDebugOutputForModule = lambda mModule: None;
+  fEnableDebugOutputForClass = lambda cClass: None;
+  fEnableAllDebugOutput = lambda: None;
+  cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
+
 try:
   from .cBrotli import cBrotli;
 except Exception:
@@ -9,7 +20,6 @@ from .cURL import cURL;
 from .fsURLEncodedStringFromNameValuePairs import fsURLEncodedStringFromNameValuePairs;
 from .fdsURLDecodedNameValuePairsFromString import fdsURLDecodedNameValuePairsFromString;
 
-from mDebugOutput import ShowDebugOutput, fShowDebugOutput;
 
 guBrotliCompressionQuality = 5;
 guGZipCompressionLevel = 5;

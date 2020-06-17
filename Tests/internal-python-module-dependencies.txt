@@ -3,7 +3,6 @@ binascii
 collections
 contextlib
 cStringIO
-ctypes
 datetime
 dis
 future__
@@ -15,13 +14,9 @@ inspect
 itertools
 keyword
 math
-mDebugOutput
 msvcrt
-mWindowsSDK
 nturl2path
-oConsole
 opcode
-platform
 random
 socket
 ssl
