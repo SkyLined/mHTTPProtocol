@@ -37,13 +37,6 @@ class iHTTPMessage(object):
   cHTTPHeaders = cHTTPHeaders;
   asSupportedCompressionTypes = ["deflate", "gzip", "x-gzip", "zlib"] + (["br"] if cBrotli else []);
   
-# Deprecated functions and their equivalent existing function:
-#  foHeadersFromDict => cHTTPHeaders.foFromDict
-#  fszHeadersGetLastNamedValueForUniqueValue => oHeader.fszGetNamedValue
-#  fozGetUniqueHeader => fozHeadersGetUnique
-#  fbHasUniqueHeaderValue => fbHeadersHaveUniqueValue
-#  fszGetUniqueHeaderNamedValue => oHeader.fszGetNamedValue
-  
   @classmethod
   @ShowDebugOutput
   def foParseHeaderLines(cClass, asHeaderLines):
@@ -84,21 +77,13 @@ class iHTTPMessage(object):
           "Cannot provide both sData (%s) and asBodyChunks (%s)!" % (repr(szData), repr(azsBodyChunks));
     oSelf.sVersion = szVersion if szVersion else "HTTP/1.1";
     oSelf.oHeaders = ozHeaders or cHTTPHeaders.foDefaultHeadersForVersion(oSelf.sVersion);
-    oSelf.__szBody = None;
-    oSelf.__azsBodyChunks = None;
     oSelf.ozAdditionalHeaders = ozAdditionalHeaders;
-    if szBody is not None:
-      oSelf.fSetBody(szBody);
-    elif szData is not None:
+    oSelf.__szBody = fsASCII(szBody, "Body") if szBody is not None else None;
+    oSelf.__azsBodyChunks = azsBodyChunks[:] if azsBodyChunks is not None else [] if oSelf.bChunked else None;
+    assert oSelf.__azsBodyChunks is None or oSelf.bChunked, \
+          "Cannot provide asBodyChunks (%s) without a Transfer-Encoded: Chunked header!" % repr(azsBodyChunks);
+    if szData is not None:
       oSelf.fSetData(szData);
-    elif azsBodyChunks is not None:
-      oSelf.fSetBodyChunks(azsBodyChunks);
-    if oSelf.bChunked:
-      assert oSelf.__azsBodyChunks is not None, \
-          "Missing asBodyChunks!?";
-    else:
-      assert oSelf.__azsBodyChunks is None, \
-          "Unexpected asBodyChunks";
   
   def __fSetContentTypeHeader(oSelf, szContentType, szCharset, szBoundary):
     if szContentType is None:
@@ -273,10 +258,10 @@ class iHTTPMessage(object):
     if oSelf.sVersion.upper() != "HTTP/1.1":
       bCloseConnectionInsteadOfUsingContentLength = True;
     if bCloseConnectionInsteadOfUsingContentLength:
-      oSelf.oHeaders.foAddHeaderForNameAndValue("Connection", "Close");
+      oSelf.oHeaders.fbReplaceHeaderForNameAndValue("Connection", "Close");
       oSelf.oHeaders.fbRemoveHeadersForName("Content-Length");
     else:
-      oSelf.oHeaders.foAddHeaderForNameAndValue("Content-Length", str(len(sBody)));
+      oSelf.oHeaders.fbReplaceHeaderForNameAndValue("Content-Length", str(len(sBody)));
     oSelf.__szBody = fsASCII(sBody, "Body");
     oSelf.__azsBodyChunks = None;
 
