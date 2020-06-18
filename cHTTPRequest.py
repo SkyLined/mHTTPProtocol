@@ -29,7 +29,13 @@ class cHTTPRequest(iHTTPMessage):
     return {"szMethod": sMethod, "sURL": sURL, "szVersion": sVersion};
   
   @ShowDebugOutput
-  def __init__(oSelf, sURL, szMethod = None, szVersion = None, ozHeaders = None, szBody = None, szData = None, azsBodyChunks = None, ozAdditionalHeaders = None, bAutomaticallyAddContentLengthHeader = False):
+  def __init__(oSelf,
+    sURL,
+    szMethod = None, szVersion = None,
+    ozHeaders = None, szBody = None, szData = None, azsBodyChunks = None,
+    ozAdditionalHeaders = None,
+    bAutomaticallyAddContentLengthHeader = False
+  ):
     oSelf.__sURL = sURL;
     oSelf.__sMethod = szMethod or ("POST" if (szBody or szData or azsBodyChunks) else "GET");
     oHeaders = ozHeaders or cHTTPHeaders.foFromDict({
@@ -66,7 +72,8 @@ class cHTTPRequest(iHTTPMessage):
   @ShowDebugOutput
   def foCreateReponse(oSelf,
     uzStatusCode = None, szMediaType = None, szBody = None,
-    szVersion = None, szReasonPhrase = None, ozHeaders = None, szData = None, azsBodyChunks = None, szCharSet = None
+    szVersion = None, szReasonPhrase = None, ozHeaders = None, szData = None, azsBodyChunks = None, szCharSet = None,
+    ozAdditionalHeaders = None, bAutomaticallyAddContentLengthHeader = False
   ):
     sVersion = szVersion or oSelf.sVersion;
     oResponse = cHTTPResponse(
@@ -77,6 +84,8 @@ class cHTTPRequest(iHTTPMessage):
       szBody = szBody,
       szData = szData,
       azsBodyChunks = azsBodyChunks,
+      ozAdditionalHeaders = ozAdditionalHeaders,
+      bAutomaticallyAddContentLengthHeader = bAutomaticallyAddContentLengthHeader,
     );
     if szMediaType or szBody or szData or axsBodyChunks:
       assert szMediaType is None or isinstance(szMediaType, (str, unicode)), \
