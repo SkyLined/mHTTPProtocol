@@ -8,6 +8,7 @@ except: # Do nothing if not available.
   fEnableAllDebugOutput = lambda: None;
   cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
 
+from .mHTTPExceptions import *;
 from .cHTTPHeader import cHTTPHeader;
 
 class cHTTPHeaders(object):
@@ -183,10 +184,10 @@ class cHTTPHeaders(object):
           fShowDebugOutput("Removing %s:%s header." % (oOldHeader.sName, "\n".join(oOldHeader.asValueLines)));
           oSelf.__aoHeaders.remove(oOldHeader);
     if oExistingHeader:
-      bReplaced = oOldHeader.sLowerValue != sLowerValue;
+      bReplaced = oExistingHeader.sLowerValue != sLowerValue;
       if bReplaced:
-        fShowDebugOutput("Replacing %s:%s header value with %s." % (sName, oOldHeader.sValue, sValue));
-      oOldHeader.sValue = (" " if sValue[:1] != " " else "") + sValue;
+        fShowDebugOutput("Replacing %s:%s header value with %s." % (sName, oExistingHeader.sValue, sValue));
+      oExistingHeader.sValue = (" " if sValue[:1] != " " else "") + sValue;
     else:
       fShowDebugOutput("Adding %s:%s header." % (sName, sValue));
       oSelf.__aoHeaders.append(cHTTPHeader(sName, (" " if sValue[:1] != " " else "") + sValue));

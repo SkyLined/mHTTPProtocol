@@ -1,4 +1,4 @@
-class cException(Exception):
+class cHTTPException(Exception):
   def __init__(oSelf, sMessage, xDetails):
     oSelf.sMessage = sMessage;
     oSelf.xDetails = xDetails;
@@ -9,3 +9,10 @@ class cException(Exception):
   def __str__(oSelf):
     sDetails = str(oSelf.xDetails) if not hasattr(oSelf.xDetails, "fsToString") else oSelf.xDetails.fsToString();
     return "%s (%s)" % (oSelf.sMessage, sDetails);
+
+class cInvalidMessageException(cHTTPException):
+  pass;
+
+class cInvalidURLException(cHTTPException):
+  pass;
+

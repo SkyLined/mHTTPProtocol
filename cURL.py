@@ -1,5 +1,5 @@
 import re, urllib;
-from .cException import cException;
+from .mHTTPExceptions import *;
 from .fdsURLDecodedNameValuePairsFromString import fdsURLDecodedNameValuePairsFromString;
 from .fsURLEncodedStringFromNameValuePairs import fsURLEncodedStringFromNameValuePairs;
 
@@ -123,25 +123,22 @@ rURL = re.compile(
 );
 
 class cURL(object):
-  class cInvalidURLException(cException):
-    pass;
-  
   @staticmethod
   def foFromString(sURL):
     if isinstance(sURL, unicode):
       sURL = str(sURL);
     elif not isinstance(sURL, str):
-      raise cURL.cInvalidURLException("Invalid URL", repr(sURL));
+      raise cInvalidURLException("Invalid URL", repr(sURL));
     oURLMatch = rURL.match(sURL);
     if not oURLMatch:
-      raise cURL.cInvalidURLException("Invalid URL", sURL);
+      raise cInvalidURLException("Invalid URL", sURL);
     (sProtocol, sHostname, szPort, szPath, szQuery, szFragment) = oURLMatch.groups();
     return cURL(sProtocol, sHostname, long(szPort) if szPort else None, szPath, szQuery, szFragment);
   
   # There is also a non-static version that allows relative URLs:
   def foFromRelativeString(oSelf, sURL, bMustBeRelative = False):
     if not isinstance(sURL, (str, unicode)):
-      raise cURL.cInvalidURLException("Invalid relative URL", repr(sURL));
+      raise cInvalidURLException("Invalid relative URL", repr(sURL));
     oRelativeURLMatch = re.match("^(?:%s)$" % "".join([
       r"(\/?[^:#?]*)?",
       r"(?:\?([^#]*))?",
@@ -149,7 +146,7 @@ class cURL(object):
     ]), sURL);
     if not oRelativeURLMatch:
       if bMustBeRelative:
-        raise cURL.cInvalidURLException("Invalid relative URL", repr(sURL));
+        raise cInvalidURLException("Invalid relative URL", repr(sURL));
       return cURL.foFromString(sURL);
     (szPath, szQuery, szFragment) = oRelativeURLMatch.groups();
     if szPath and not szPath.startswith("/"):

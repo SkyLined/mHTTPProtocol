@@ -14,17 +14,19 @@ try:
   from .cBrotli import cBrotli;
 except Exception:
   cBrotli = None;
-from .cInvalidMessageException import cInvalidMessageException;
 from .cHTTPHeaders import cHTTPHeaders;
 from .cURL import cURL;
-from .fsURLEncodedStringFromNameValuePairs import fsURLEncodedStringFromNameValuePairs;
 from .fdsURLDecodedNameValuePairsFromString import fdsURLDecodedNameValuePairsFromString;
+from .fsURLEncodedStringFromNameValuePairs import fsURLEncodedStringFromNameValuePairs;
+from .mHTTPExceptions import *;
 
 
 guBrotliCompressionQuality = 5;
 guGZipCompressionLevel = 5;
 guZLibCompressionLevel = 5;
 guDeflateCompressionLevel = 5;
+
+gbShowAllHeadersInStrReturnValue = False;
 
 def fsASCII(sData, sDataTypeDescription):
   try:
@@ -391,11 +393,19 @@ class iHTTPMessage(object):
     
     bCloseConnection = oSelf.oHeaders.fbHasUniqueValueForName("Connection", "Close");
     
+    ozHostHeader = oSelf.oHeaders.fozGetUniqueHeaderForName("Host", oSelf.ozAdditionalHeaders);
     ozContentTypeHeader = oSelf.oHeaders.fozGetUniqueHeaderForName("Content-Type", oSelf.ozAdditionalHeaders);
     szMediaType = ozContentTypeHeader.sValue.split(";")[0].strip() if ozContentTypeHeader else None;
     return [s for s in [
       oSelf.fsGetStatusLine(),
-      "%d headers" % oSelf.oHeaders.uNumberOfHeaders,
+      "%d headers" % oSelf.oHeaders.uNumberOfHeaders if not gbShowAllHeadersInStrReturnValue else None,
+      "Host: %s" % ozHostHeader.sValue if ozHostHeader and not gbShowAllHeadersInStrReturnValue else None,
+    ] if s] + (
+      [
+        "%s: %s" % (oHeader.sName, oHeader.sValue)
+        for oHeader in oSelf.oHeaders.faoGetHeaders()
+      ] if gbShowAllHeadersInStrReturnValue else []
+    ) + [s for s in [
       szMediaType,
       sBodyDetails,
       "%s compressed" % sCompressionTypes if sCompressionTypes else None,
