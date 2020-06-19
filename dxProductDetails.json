@@ -5,7 +5,7 @@
     "mWindowsSDK", 
     "oConsole"
   ], 
-  "oProductVersion": "2020-06-18 08:30", 
+  "oProductVersion": "2020-06-19 15:52", 
   "oRepository": {
     "sBranch": "master", 
     "sRepositoryName": "mHTTPProtocol", 
