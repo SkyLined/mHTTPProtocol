@@ -10,7 +10,7 @@ class cHTTPException(Exception):
     sDetails = str(oSelf.xDetails) if not hasattr(oSelf.xDetails, "fsToString") else oSelf.xDetails.fsToString();
     return "%s (%s)" % (oSelf.sMessage, sDetails);
 
-class cInvalidMessageException(cHTTPException):
+class cHTTPInvalidMessageException(cHTTPException):
   pass;
 
 class cInvalidURLException(cHTTPException):

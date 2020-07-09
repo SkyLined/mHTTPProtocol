@@ -18,7 +18,7 @@ from .cHTTPHeaders import cHTTPHeaders;
 from .cURL import cURL;
 from .fdsURLDecodedNameValuePairsFromString import fdsURLDecodedNameValuePairsFromString;
 from .fsURLEncodedStringFromNameValuePairs import fsURLEncodedStringFromNameValuePairs;
-from .mHTTPExceptions import *;
+from .mExceptions import *;
 
 
 guBrotliCompressionQuality = 5;
@@ -35,8 +35,6 @@ def fsASCII(sData, sDataTypeDescription):
     raise AssertionError("%s cannot contain Unicode characters: %s" % (sDataTypeDescription, repr(sData)));
 
 class iHTTPMessage(object):
-  cInvalidMessageException = cInvalidMessageException;
-  cHTTPHeaders = cHTTPHeaders;
   asSupportedCompressionTypes = ["deflate", "gzip", "x-gzip", "zlib"] + (["br"] if cBrotli else []);
   
   @classmethod
@@ -47,7 +45,7 @@ class iHTTPMessage(object):
     for sHeaderLine in asHeaderLines:
       if sHeaderLine[0] in " \t": # header continuation
         if oMostRecentHeader is None:
-          raise cInvalidMessageException(
+          raise cHTTPInvalidMessageException(
             "A header line continuation was sent on the first header line, which is not valid.",
             {"sHeaderLine": sHeaderLine},
           );
@@ -55,7 +53,7 @@ class iHTTPMessage(object):
       else: # header
         asHeaderNameAndValue = sHeaderLine.split(":", 1);
         if len(asHeaderNameAndValue) != 2:
-          raise cInvalidMessageException(
+          raise cHTTPInvalidMessageException(
             "A header line did not contain a colon.",
             {"sHeaderLine": sHeaderLine},
           );
@@ -151,7 +149,7 @@ class iHTTPMessage(object):
     if oSelf.ozAdditionalHeaders:
       aoTransferEncodingHeaders = oSelf.ozAdditionalHeaders.faoGetHeadersForName("Transfer-Encoding");
       if aoTransferEncodingHeaders:
-        raise cInvalidMessageException(
+        raise cHTTPInvalidMessageException(
           "Additional headers contain Transfer-Encoding headers",
           {"aoTransferEncodingHeaders": aoTransferEncodingHeaders},
         );
@@ -176,7 +174,7 @@ class iHTTPMessage(object):
     elif oSelf.sVersion.upper() == "HTTP/1.1":
       fShowDebugOutput("No 'Connection' header found; defaulting to 'Keep-alive' for %s" % oSelf.sVersion);
       return False;
-    raise cInvalidMessageException(
+    raise cHTTPInvalidMessageException(
       "Invalid HTTP version!",
       {"sHTTPVersion": oSelf.sVersion},
     );

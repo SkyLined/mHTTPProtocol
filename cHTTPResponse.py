@@ -10,7 +10,7 @@ except: # Do nothing if not available.
 
 from .dsHTTPCommonReasonPhrase_by_uStatusCode import dsHTTPCommonReasonPhrase_by_uStatusCode;
 from .iHTTPMessage import iHTTPMessage;
-from .mHTTPExceptions import *;
+from .mExceptions import *;
 
 class cHTTPResponse(iHTTPMessage):
   @staticmethod
@@ -18,10 +18,10 @@ class cHTTPResponse(iHTTPMessage):
   def fdxParseStatusLine(sStatusLine):
     asComponents = sStatusLine.split(" ", 2);
     if len(asComponents) != 3:
-      raise cInvalidMessageException("The remote send an invalid status line.", sStatusLine);
+      raise cHTTPInvalidMessageException("The remote send an invalid status line.", sStatusLine);
     sVersion, sStatusCode, sReasonPhrase = asComponents;
     if sVersion not in ["HTTP/1.0", "HTTP/1.1"]:
-      raise cInvalidMessageException("The remote send an invalid HTTP version in the status line.", sVersion);
+      raise cHTTPInvalidMessageException("The remote send an invalid HTTP version in the status line.", sVersion);
     try:
       if len(sStatusCode) != 3:
         raise ValueError();
@@ -29,7 +29,7 @@ class cHTTPResponse(iHTTPMessage):
       if uStatusCode < 100 or uStatusCode > 599:
         raise ValueError();
     except ValueError:
-      raise cInvalidMessageException("The remote send an invalid status code in the status line.", sStatusCode);
+      raise cHTTPInvalidMessageException("The remote send an invalid status code in the status line.", sStatusCode);
     # Return value is a dict with elements that take the same name as their corresponding constructor arguments.
     return {"szVersion": sVersion, "uzStatusCode": uStatusCode, "szReasonPhrase": sReasonPhrase};
   

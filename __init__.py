@@ -3,7 +3,7 @@ from .cHTTPHeaders import cHTTPHeaders;
 from .cHTTPRequest import cHTTPRequest;
 from .cHTTPResponse import cHTTPResponse;
 from .cURL import cURL;
-import mHTTPExceptions;
+import mExceptions;
 
 __all__ = [
   "cHTTPHeader",
@@ -11,5 +11,5 @@ __all__ = [
   "cHTTPRequest",
   "cHTTPResponse",
   "cURL",
-  "mHTTPExceptions",
+  "mExceptions",
 ];

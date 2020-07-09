@@ -8,7 +8,7 @@ except: # Do nothing if not available.
   fEnableAllDebugOutput = lambda: None;
   cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
 
-from .mHTTPExceptions import *;
+from .mExceptions import *;
 from .cHTTPHeader import cHTTPHeader;
 
 class cHTTPHeaders(object):
@@ -67,7 +67,7 @@ class cHTTPHeaders(object):
   @ShowDebugOutput
   def fozGetUniqueHeaderForName(oSelf, sName, oAdditionalHeaders = None):
     # returns the first header with the given name.
-    # will throw a cInvalidMessageException if there are multiple headers
+    # will throw a cHTTPInvalidMessageException if there are multiple headers
     # with the given name with different values, ignoring case.
     aoHeaders = oSelf.faoGetHeadersForName(sName);
     if oAdditionalHeaders:
@@ -77,7 +77,7 @@ class cHTTPHeaders(object):
     if len(aoHeaders) > 1:
       uNumberOfUniqueHeaderValues = len(set([oHeader.sLowerValue for oHeader in aoHeaders]));
       if uNumberOfUniqueHeaderValues > 1:
-        raise cInvalidMessageException(
+        raise cHTTPInvalidMessageException(
           "A valid HTTP message cannot have more than 1 unique value for the %s header" % sName,
           aoHeaders
         );
@@ -134,7 +134,7 @@ class cHTTPHeaders(object):
   def fbHasUniqueValueForName(oSelf, sName, sValue, oAdditionalHeaders = None):
     # returns true if all headers with the given name have the provided value,
     # ignoring case.
-    # will throw a cInvalidMessageException if there are multiple headers
+    # will throw a cHTTPInvalidMessageException if there are multiple headers
     # with the given name with different values, ignoring case.
     assert isinstance(sName, str), \
         "sName must be a string, not %s" % repr(sName);

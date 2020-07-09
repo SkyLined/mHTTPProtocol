@@ -8,7 +8,7 @@ except: # Do nothing if not available.
   fEnableAllDebugOutput = lambda: None;
   cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
 
-from .mHTTPExceptions import *;
+from .mExceptions import *;
 from .cHTTPHeaders import cHTTPHeaders;
 from .cHTTPResponse import cHTTPResponse;
 from .iHTTPMessage import iHTTPMessage;
@@ -20,10 +20,10 @@ class cHTTPRequest(iHTTPMessage):
   def fdxParseStatusLine(sStatusLine):
     asComponents = sStatusLine.split(" ", 2);
     if len(asComponents) != 3:
-      raise cInvalidMessageException("The remote send an invalid status line.", sStatusLine);
+      raise cHTTPInvalidMessageException("The remote send an invalid status line.", sStatusLine);
     sMethod, sURL, sVersion = asComponents;
     if sVersion not in ["HTTP/1.0", "HTTP/1.1"]:
-      raise cInvalidMessageException("The remote send an invalid HTTP version in the status line.", sVersion);
+      raise cHTTPInvalidMessageException("The remote send an invalid HTTP version in the status line.", sVersion);
     # Return value is a dict with elements that take the same name as their corresponding constructor arguments.
     return {"szMethod": sMethod, "sURL": sURL, "szVersion": sVersion};
   

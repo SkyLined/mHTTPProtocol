@@ -1,5 +1,5 @@
 import re, urllib;
-from .mHTTPExceptions import *;
+from .mExceptions import *;
 from .fdsURLDecodedNameValuePairsFromString import fdsURLDecodedNameValuePairsFromString;
 from .fsURLEncodedStringFromNameValuePairs import fsURLEncodedStringFromNameValuePairs;
 
