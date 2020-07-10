@@ -28,11 +28,11 @@ guDeflateCompressionLevel = 5;
 
 gbShowAllHeadersInStrReturnValue = False;
 
-def fsASCII(sData, sDataTypeDescription):
+def fsASCII(szData, sDataTypeDescription):
   try:
-    return str(sData or "");
+    return str(szData or "");
   except:
-    raise AssertionError("%s cannot contain Unicode characters: %s" % (sDataTypeDescription, repr(sData)));
+    raise AssertionError("%s cannot contain Unicode characters: %s" % (sDataTypeDescription, repr(szData)));
 
 class iHTTPMessage(object):
   asSupportedCompressionTypes = ["deflate", "gzip", "x-gzip", "zlib"] + (["br"] if cBrotli else []);
@@ -70,11 +70,11 @@ class iHTTPMessage(object):
   @ShowDebugOutput
   def __init__(oSelf, szVersion = None, ozHeaders = None, szBody = None, szData = None, azsBodyChunks = None, ozAdditionalHeaders = None, bAutomaticallyAddContentLengthHeader = False):
     assert szBody is None or szData is None, \
-          "Cannot provide both sBody (%s) and sData (%s)!" % (repr(szBody), repr(szData));
+          "Cannot provide both szBody (%s) and szData (%s)!" % (repr(szBody), repr(szData));
     assert szBody is None or azsBodyChunks is None, \
-          "Cannot provide both sBody (%s) and asBodyChunks (%s)!" % (repr(szBody), repr(azsBodyChunks));
+          "Cannot provide both szBody (%s) and asBodyChunks (%s)!" % (repr(szBody), repr(azsBodyChunks));
     assert szData is None or azsBodyChunks is None, \
-          "Cannot provide both sData (%s) and asBodyChunks (%s)!" % (repr(szData), repr(azsBodyChunks));
+          "Cannot provide both szData (%s) and asBodyChunks (%s)!" % (repr(szData), repr(azsBodyChunks));
     oSelf.sVersion = szVersion if szVersion else "HTTP/1.1";
     oSelf.oHeaders = ozHeaders or cHTTPHeaders.foDefaultHeadersForVersion(oSelf.sVersion);
     oSelf.ozAdditionalHeaders = ozAdditionalHeaders;
@@ -194,11 +194,12 @@ class iHTTPMessage(object):
     return [s.strip() for s in ozContentEncodingHeader.sValue.split(",")] if ozContentEncodingHeader else [];
   
   @property
-  def sData(oSelf):
+  def szData(oSelf):
     # Returns decoded and decompressed body based on the Content-Encoding header.
-    sData = oSelf.__szBody if not oSelf.bChunked else "".join(oSelf.__azsBodyChunks);
-    if sData is None:
+    szData = oSelf.__szBody if not oSelf.bChunked else "".join(oSelf.__azsBodyChunks);
+    if szData is None:
       return None;
+    sData = szData; # Never None past this point.
     asCompressionTypes = oSelf.asCompressionTypes;
     if len(asCompressionTypes) > 0:
       for sCompressionType in reversed(asCompressionTypes):
@@ -228,6 +229,8 @@ class iHTTPMessage(object):
     if szCharset is not None:
       # Convert unicode to bytes using charset defined in Content-Type header.
       sData = str(sData, szCharset);
+    assert isinstance(sData, str), \
+        "sData (%s) must be an byte string or the szCharset property must be set to be able to convert it to a byte string";
     # Sets the (optionally) compressed body of the message.
     asCompressionTypes = oSelf.asCompressionTypes;
     if len(asCompressionTypes) > 0:
@@ -319,14 +322,19 @@ class iHTTPMessage(object):
     szMediaType = oSelf.szMediaType;
     if szMediaType is None or szMediaType.lower() != "application/x-www-form-urlencoded":
       return None;
-    return fdsURLDecodedNameValuePairsFromString(oSelf.sData);
+    szData = oSelf.szData;
+    return fdsURLDecodedNameValuePairsFromString(szData) if szData else {};
   
   @ShowDebugOutput
   def fszGetFormValue(oSelf, sName):
     # convert the decoded and decompressed body to form name-value pairs and return the value for the given name
     # or None if there is no such value.
+    dzForm_sValue_by_sName = oSelf.dzForm_sValue_by_sName;
+    assert dzForm_sValue_by_sName, \
+        "HTTP Message does not contain URL encoded form data.";
+    dForm_sValue_by_sName = dzForm_sValue_by_sName;
     sLowerCaseName = sName.lower();
-    for (sName, sValue) in oSelf.dForm_sValue_by_sName.items():
+    for (sName, sValue) in dForm_sValue_by_sName.items():
       if sLowerCaseName == sName.lower():
         return sValue;
     return None;
@@ -336,12 +344,15 @@ class iHTTPMessage(object):
     # convert the decoded and decompressed body to form name-value pairs, set the given name to the given value 
     # and update the optionally compressed body to match.
     sLowerStrippedName = sName.strip().lower();
-    dForm_sValue_by_sName = oSelf.dForm_sValue_by_sName;
+    dzForm_sValue_by_sName = oSelf.dzForm_sValue_by_sName;
+    assert dzForm_sValue_by_sName, \
+        "HTTP Message does not contain URL encoded form data.";
+    dForm_sValue_by_sName = dzForm_sValue_by_sName;
     for sOtherName in dForm_sValue_by_sName.keys():
       if sLowerStrippedName == sOtherName.lower():
         del dForm_sValue_by_sName[sOtherName];
     dForm_sValue_by_sName[sName] = sValue;
-    oSelf.sData = fsURLEncodedStringFromNameValuePairs(dForm_sValue_by_sName);
+    oSelf.fSetData(fsURLEncodedStringFromNameValuePairs(dForm_sValue_by_sName));
   
   # Authorization
   @ShowDebugOutput
