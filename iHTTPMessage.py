@@ -206,7 +206,7 @@ class iHTTPMessage(object):
         sLowerCompressionType = sCompressionType.lower();
         if cBrotli and sLowerCompressionType == "br":
           oBrotli = cBrotli();
-          sData = oBrotli.decompress(sData) + oBrotli.flush();
+          sData = str(oBrotli.decompress(sData));
         elif sLowerCompressionType == "deflate":
           sData = zlib.decompress(sData, -zlib.MAX_WBITS);
         elif sLowerCompressionType in ["gzip", "x-gzip"]:

@@ -56,16 +56,16 @@ class cBrotli:
     sDictionaryHashFilePath = os.path.join(gsBaseFolderPath, "DictionaryHash.txt");
     sDictionaryWordsFilePath = os.path.join(gsBaseFolderPath, "DictionaryWords.txt");
     sDictionaryBucketsFilePath = os.path.join(gsBaseFolderPath, "DictionaryBuckets.txt");
-    _hx_class_name = "Brotli"
+    _hx_class_name = "cBrotli"
     __slots__ = ()
     _hx_methods = ["decompress", "compress", "decompressArray", "compressArray"]
     _hx_statics = ["OpenInputFile", "OpenOutputFile", "OpenInputBinary"]
 
     def __init__(self):
-        dictionary = Brotli.OpenInputBinary(self.sDictionaryFilePath)
-        DictionaryHash = Brotli.OpenInputBinary(self.sDictionaryHashFilePath)
-        DictionaryWords = Brotli.OpenInputBinary(self.sDictionaryWordsFilePath)
-        DictionaryBuckets = Brotli.OpenInputBinary(self.sDictionaryBucketsFilePath)
+        dictionary = cBrotli.OpenInputBinary(self.sDictionaryFilePath)
+        DictionaryHash = cBrotli.OpenInputBinary(self.sDictionaryHashFilePath)
+        DictionaryWords = cBrotli.OpenInputBinary(self.sDictionaryWordsFilePath)
+        DictionaryBuckets = cBrotli.OpenInputBinary(self.sDictionaryBucketsFilePath)
         decode_Dictionary.kBrotliDictionary = dictionary
         encode_Dictionary.kBrotliDictionary = dictionary
         kStaticDictionaryHash = encode_Dictionary_hash.kStaticDictionaryHash
