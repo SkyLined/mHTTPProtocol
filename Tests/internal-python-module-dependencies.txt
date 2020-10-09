@@ -1,17 +1,20 @@
 base64
 binascii
+bz2
 collections
 contextlib
 cStringIO
 ctypes
 datetime
 dis
+fnmatch
 future__
 gc
 hashlib
 heapq
 imp
 inspect
+io
 itertools
 keyword
 math
@@ -20,6 +23,7 @@ nturl2path
 opcode
 platform
 random
+shutil
 socket
 ssl
 string
@@ -35,4 +39,5 @@ token
 tokenize
 urllib
 urlparse
+zipfile
 zlib
