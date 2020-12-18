@@ -350,8 +350,10 @@ class iHTTPMessage(object):
     return None;
   
   @ShowDebugOutput
-  def fSetFormValue(oSelf, sName, sValue):
-    # convert the decoded and decompressed body to form name-value pairs, set the given name to the given value 
+  def fSetFormValue(oSelf, sName, s0Value):
+    # Convert the decoded and decompressed body to form name-value pairs,
+    # remove all existing values with the given name,
+    # if the value is not None, add the new named value,
     # and update the optionally compressed body to match.
     sLowerStrippedName = sName.strip().lower();
     d0Form_sValue_by_sName = oSelf.d0Form_sValue_by_sName;
@@ -361,7 +363,8 @@ class iHTTPMessage(object):
     for sOtherName in dForm_sValue_by_sName.keys():
       if sLowerStrippedName == sOtherName.lower():
         del dForm_sValue_by_sName[sOtherName];
-    dForm_sValue_by_sName[sName] = sValue;
+    if s0Value is not None:
+      dForm_sValue_by_sName[sName] = s0Value;
     oSelf.fSetData(fsURLEncodedStringFromNameValuePairs(dForm_sValue_by_sName));
   
   @ShowDebugOutput
