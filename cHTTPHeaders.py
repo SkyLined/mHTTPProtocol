@@ -17,7 +17,7 @@ class cHTTPHeaders(object):
       "Connection": "Close",
       "Cache-Control": "No-Cache, Must-Revalidate",
       "Expires": "Wed, 16 May 2012 04:01:53 GMT", # 1337
-      "Oragma": "No-Cache",
+      "Pragma": "No-Cache",
     },
     "HTTP/1.1": {
       "Connection": "Keep-Alive",
