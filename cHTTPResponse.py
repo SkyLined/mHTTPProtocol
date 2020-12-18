@@ -11,8 +11,10 @@ except: # Do nothing if not available.
 from .dsHTTPCommonReasonPhrase_by_uStatusCode import dsHTTPCommonReasonPhrase_by_uStatusCode;
 from .iHTTPMessage import iHTTPMessage;
 from .mExceptions import *;
+from .mNotProvided import *;
 
 class cHTTPResponse(iHTTPMessage):
+  uDefaultStatusCode = 200;
   @staticmethod
   @ShowDebugOutput
   def fdxParseStatusLine(sStatusLine):
@@ -31,29 +33,57 @@ class cHTTPResponse(iHTTPMessage):
     except ValueError:
       raise cHTTPInvalidMessageException("The remote send an invalid status code in the status line.", sStatusCode);
     # Return value is a dict with elements that take the same name as their corresponding constructor arguments.
+    # Return a dictionary that can be used as arguments to __init__
     return {"szVersion": sVersion, "uzStatusCode": uStatusCode, "szReasonPhrase": sReasonPhrase};
   
+  @staticmethod
+  def fsGetDefaultReasonPhraseForStatus(uStatusCode):
+    return dsHTTPCommonReasonPhrase_by_uStatusCode.get(oSelf.__uStatusCode, "Unspecified");  
+  
   @ShowDebugOutput
-  def __init__(oSelf, szVersion = None, uzStatusCode = None, szReasonPhrase = None, ozHeaders = None, szBody = None, szData = None, azsBodyChunks = None, ozAdditionalHeaders = None, bAutomaticallyAddContentLengthHeader = False):
-    assert uzStatusCode is None or (isinstance(uzStatusCode, (long, int)) and uzStatusCode in xrange(100, 600)), \
-        "Status code must be an unsigned integer in the range 100-999, not %s" % repr(uzStatusCode);
-    oSelf.uStatusCode = uzStatusCode;
-    oSelf.sReasonPhrase = szReasonPhrase;
-    iHTTPMessage.__init__(oSelf, szVersion, ozHeaders, szBody, szData, azsBodyChunks, ozAdditionalHeaders, bAutomaticallyAddContentLengthHeader);
+  def __init__(oSelf,
+    szVersion = zNotProvided,
+    uzStatusCode = zNotProvided,
+    szReasonPhrase = zNotProvided,
+    o0zHeaders = zNotProvided,
+    s0Body = None,
+    s0Data = None,
+    a0sBodyChunks = None,
+    o0AdditionalHeaders = None,
+    bAutomaticallyAddContentLengthHeader = False
+  ):
+    oSelf.uStatusCode = fxGetFirstProvidedValue(uzStatusCode, oSelf.uDefaultStatusCode);
+    oSelf.sReasonPhrase = (
+      szReasonPhrase if fbIsProvided(szReasonPhrase) else
+      oSelf.fsGetDefaultReasonPhraseForStatus(oSelf.uStatusCode)
+    );
+    iHTTPMessage.__init__(oSelf,
+      szVersion,
+      o0zHeaders if fbIsProvided(o0zHeader) else cHTTPHeaders.foDefaultResponseHeadersForVersion(sVersion),
+      s0Body,
+      s0Data,
+      a0sBodyChunks,
+      o0AdditionalHeaders,
+      bAutomaticallyAddContentLengthHeader
+    );
   
   @property
   def uStatusCode(oSelf):
     return oSelf.__uStatusCode;
   @uStatusCode.setter
-  def uStatusCode(oSelf, uzStatusCode): # setting to None or 0 will result in it being set to 200
-    oSelf.__uStatusCode = uzStatusCode or 200;
+  def uStatusCode(oSelf, uStatusCode):
+    assert (isinstance(uStatusCode, (long, int)) and uStatusCode in xrange(100, 600)), \
+        "Status code must be an unsigned integer in the range 100-999, not %s" % repr(uStatusCode);
+    oSelf.__uStatusCode = uStatusCode;
   
   @property
   def sReasonPhrase(oSelf):
     return oSelf.__sReasonPhrase;
   @sReasonPhrase.setter
-  def sReasonPhrase(oSelf, szReasonPhrase): # setting to None or "" will result in it being set to a common message for the current status code.
-    oSelf.__sReasonPhrase = szReasonPhrase or dsHTTPCommonReasonPhrase_by_uStatusCode.get(oSelf.__uStatusCode, "Unspecified");
+  def sReasonPhrase(oSelf, sReasonPhrase): # setting to "" will result in it being set to a common message for the current status code.
+    assert isinstance(sReasonPhrase, str), \
+        "The reason phrase must be a str, not %s" % repr(sReasonPhrase);
+    oSelf.__sReasonPhrase = sReasonPhrase or oSelf.fsGetDefaultReasonPhraseForStatus(oSelf.__uStatusCode);
   
   def fsGetStatusLine(oSelf):
     return "%s %03d %s" % (oSelf.sVersion, oSelf.__uStatusCode, oSelf.__sReasonPhrase);

@@ -80,7 +80,7 @@ class cHTTPHeader(object):
   def foClone(oSelf):
     return oSelf.__class__(oSelf.__sName, *oSelf.__asValueLines);
   
-  def fszGetNamedValue(oSelf, sValueName):
+  def fs0GetNamedValue(oSelf, sValueName):
     # Look through the named values after the first ';' from last to first.
     # Return as soon as one is seen; this will return the last value in the header.
     sLowerValueName = sValueName.lower();

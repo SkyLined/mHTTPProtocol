@@ -41,11 +41,11 @@ class cHTTPHeaders(object):
     return cClass([cHTTPHeader(sName, sValue) for (sName, sValue) in dxHeaders.items()]);
   
   @ShowDebugOutput
-  def __init__(oSelf, aoHeaders = None):
-    for oHeader in (aoHeaders or []):
+  def __init__(oSelf, a0oHeaders = None):
+    oSelf.__aoHeaders = a0oHeaders or [];
+    for oHeader in oSelf.__aoHeaders:
       assert isinstance(oHeader, cHTTPHeader), \
           "aoHeaders must contain only cHTTPHeader instances, not %s" % repr(oHeader);
-    oSelf.__aoHeaders = aoHeaders or [];
   
   def foClone(oSelf):
     return oSelf.__class__([oHeader.foClone() for oHeader in oSelf.__aoHeaders]);
@@ -65,13 +65,13 @@ class cHTTPHeaders(object):
     return [oHeader for oHeader in oSelf.__aoHeaders if oHeader.sLowerName == sLowerName];
   
   @ShowDebugOutput
-  def fozGetUniqueHeaderForName(oSelf, sName, oAdditionalHeaders = None):
+  def fo0GetUniqueHeaderForName(oSelf, sName, o0AdditionalHeaders = None):
     # returns the first header with the given name.
     # will throw a cHTTPInvalidMessageException if there are multiple headers
     # with the given name with different values, ignoring case.
     aoHeaders = oSelf.faoGetHeadersForName(sName);
-    if oAdditionalHeaders:
-      aoHeaders += oAdditionalHeaders.faoGetHeadersForName(sName);
+    if o0AdditionalHeaders:
+      aoHeaders += o0AdditionalHeaders.faoGetHeadersForName(sName);
     if len(aoHeaders) == 0:
       return None;
     if len(aoHeaders) > 1:
@@ -116,22 +116,22 @@ class cHTTPHeaders(object):
     oSelf.__aoHeaders.append(cHTTPHeader(sName, (" " if sValue[:1] != " " else "") + sValue));
   
   @ShowDebugOutput
-  def fbHasValueForName(oSelf, sName, sValue = None):
+  def fbHasValueForName(oSelf, sName, s0Value = None):
     assert isinstance(sName, str), \
         "sName must be a string, not %s" % repr(sName);
-    assert sValue is None or isinstance(sValue, str), \
-        "sValue must be a string or None, not %s" % repr(sValue);
+    assert s0Value is None or isinstance(s0Value, str), \
+        "s0Value must be a string or None, not %s" % repr(sValue);
     sLowerName = sName.lower();
-    sLowerValue = sValue.lower() if sValue is not None else None;
+    s0LowerValue = s0Value.lower() if s0Value is not None else None;
     for oHeader in oSelf.__aoHeaders:
       if oHeader.sLowerName == sLowerName:
-        if sValue is None or oHeader.sLowerValue == sLowerValue:
+        if s0Value is None or oHeader.sLowerValue == s0LowerValue:
           fShowDebugOutput("Found %s:%s header." % (oHeader.sName, "\n".join(oHeader.asValueLines)));
           return True;
     return False;
   
   @ShowDebugOutput
-  def fbHasUniqueValueForName(oSelf, sName, sValue, oAdditionalHeaders = None):
+  def fbHasUniqueValueForName(oSelf, sName, sValue, o0AdditionalHeaders = None):
     # returns true if all headers with the given name have the provided value,
     # ignoring case.
     # will throw a cHTTPInvalidMessageException if there are multiple headers
@@ -140,28 +140,29 @@ class cHTTPHeaders(object):
         "sName must be a string, not %s" % repr(sName);
     assert isinstance(sValue, str), \
         "sValue must be a string, not %s" % repr(sValue);
-    ozHeader = oSelf.fozGetUniqueHeaderForName(sName, oAdditionalHeaders);
-    if ozHeader is None:
+    o0Header = oSelf.fo0GetUniqueHeaderForName(sName, o0AdditionalHeaders);
+    if o0Header is None:
       fShowDebugOutput("No %s header found." % sName);
       return False;
-    if ozHeader.sLowerValue != sValue.lower():
-      fShowDebugOutput("Header value %s != %s" % (repr(ozHeader.sLowerValue), repr(sValue.lower())));
+    oHeader = o0Header;
+    if oHeader.sLowerValue != sValue.lower():
+      fShowDebugOutput("Header value %s != %s" % (repr(oHeader.sLowerValue), repr(sValue.lower())));
       return False;
-    fShowDebugOutput("Found %s:%s header." % (ozHeader.sName, "\n".join(ozHeader.asValueLines)));
+    fShowDebugOutput("Found %s:%s header." % (oHeader.sName, "\n".join(oHeader.asValueLines)));
     return True;
   
   @ShowDebugOutput
-  def fbRemoveHeadersForName(oSelf, sName, sValue = None):
+  def fbRemoveHeadersForName(oSelf, sName, s0Value = None):
     assert isinstance(sName, str), \
         "sName must be a string, not %s" % repr(sName);
-    assert sValue is None or isinstance(sValue, str), \
-        "sValue must be a string or None, not %s" % repr(sValue);
+    assert s0Value is None or isinstance(s0Value, str), \
+        "s0Value must be a string or None, not %s" % repr(s0Value);
     sLowerName = sName.lower();
-    sLowerValue = sValue.lower() if sValue is not None else None;
+    s0LowerValue = s0Value.lower() if s0Value is not None else None;
     bRemoved = False;
     for oOldHeader in oSelf.__aoHeaders[:]:
       if oOldHeader.sLowerName == sLowerName:
-        if sValue is None or oOldHeader.sLowerValue == sLowerValue:
+        if s0Value is None or oOldHeader.sLowerValue == s0LowerValue:
           fShowDebugOutput("Removing %s:%s header." % (oOldHeader.sName, "\n".join(oOldHeader.asValueLines)));
           oSelf.__aoHeaders.remove(oOldHeader);
           bRemoved = True;

@@ -8,11 +8,12 @@ except: # Do nothing if not available.
   fEnableAllDebugOutput = lambda: None;
   cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
 
-from .mExceptions import *;
 from .cHTTPHeaders import cHTTPHeaders;
 from .cHTTPResponse import cHTTPResponse;
 from .iHTTPMessage import iHTTPMessage;
 from .cURL import cURL;
+from .mExceptions import *;
+from .mNotProvided import *;
 
 class cHTTPRequest(iHTTPMessage):
   @staticmethod
@@ -30,21 +31,33 @@ class cHTTPRequest(iHTTPMessage):
   @ShowDebugOutput
   def __init__(oSelf,
     sURL,
-    szMethod = None, szVersion = None,
-    ozHeaders = None, szBody = None, szData = None, azsBodyChunks = None,
-    ozAdditionalHeaders = None,
+    szMethod = zNotProvided,
+    szVersion = zNotProvided,
+    o0zHeaders = None,
+    s0Body = None,
+    s0Data = None,
+    a0sBodyChunks = None,
+    o0AdditionalHeaders = None,
     bAutomaticallyAddContentLengthHeader = False
   ):
     oSelf.__sURL = sURL;
-    oSelf.__sMethod = szMethod or ("POST" if (szBody or szData or azsBodyChunks) else "GET");
-    oHeaders = ozHeaders or cHTTPHeaders.foFromDict({
+    oSelf.__sMethod = fxGetFirstProvidedValue(szMethod, "POST" if (szBody or szData or azsBodyChunks) else "GET");
+    o0Headers = o0zHeaders if fbIsProvided(o0zHeaders) else cHTTPHeaders.foFromDict({
       "Accept": "*/*",
       "Accept-Encoding": ", ".join(oSelf.asSupportedCompressionTypes),
       "Cache-Control": "No-Cache, Must-Revalidate",
       "Connection": "Keep-Alive",
       "Pragma": "No-Cache",
     });
-    iHTTPMessage.__init__(oSelf, szVersion, oHeaders, szBody, szData, azsBodyChunks, ozAdditionalHeaders, bAutomaticallyAddContentLengthHeader);
+    iHTTPMessage.__init__(oSelf,
+      szVersion,
+      o0Headers,
+      s0Body,
+      s0Data,
+      a0sBodyChunks,
+      o0AdditionalHeaders,
+      bAutomaticallyAddContentLengthHeader
+    );
   
   @property
   def sURL(oSelf):
@@ -56,46 +69,56 @@ class cHTTPRequest(iHTTPMessage):
   def sMethod(oSelf):
     return oSelf.__sMethod;
   @sMethod.setter
-  def sMethod(oSelf, sMethod): # Setting to None or "" results in "POST" if there is a body and "GET" if there is none.
+  def sMethod(oSelf, sMethod): # Setting "" results in "POST" if there is a body and "GET" if there is none.
+    assert isinstance(sMethod, str), \
+        "The reason phrase must be a str, not %s" % repr(sReasonPhrase);
     oSelf.__sMethod = sMethod or ("POST" if (szBody or szData or azsBodyChunks) else "GET");
   
   @ShowDebugOutput
   def foClone(oSelf):
     if oSelf.bChunked:
-      return cHTTPRequest(oSelf.sURL, oSelf.sMethod, oSelf.sVersion, oSelf.oHeaders.foClone(), azsBodyChunks = oSelf.azsBodyChunks);
-    return cHTTPRequest(oSelf.sURL, oSelf.sMethod, oSelf.sVersion, oSelf.oHeaders.foClone(), szBody = oSelf.szBody);
+      return cHTTPRequest(oSelf.sURL, oSelf.sMethod, oSelf.sVersion, oSelf.oHeaders.foClone(), a0sBodyChunks = oSelf.a0sBodyChunks);
+    return cHTTPRequest(oSelf.sURL, oSelf.sMethod, oSelf.sVersion, oSelf.oHeaders.foClone(), s0Body = oSelf.s0Body);
   
   def fsGetStatusLine(oSelf):
     return "%s %s %s" % (oSelf.sMethod, oSelf.sURL, oSelf.sVersion);
   
   @ShowDebugOutput
   def foCreateReponse(oSelf,
-    uzStatusCode = None, szMediaType = None, szBody = None,
-    szVersion = None, szReasonPhrase = None, ozHeaders = None, szData = None, azsBodyChunks = None, szCharSet = None,
-    ozAdditionalHeaders = None, bAutomaticallyAddContentLengthHeader = False
+    szVersion = zNotProvided,
+    uzStatusCode = zNotProvided,
+    szReasonPhrase = zNotProvided,
+    s0Body = None,
+    o0Headers = None,
+    s0Data = None,
+    a0sBodyChunks = None,
+    s0CharSet = None,
+    o0AdditionalHeaders = None,
+    s0MediaType = None,
+    bAutomaticallyAddContentLengthHeader = False
   ):
-    sVersion = szVersion or oSelf.sVersion;
+    sVersion = fxGetFirstProvidedValue(szVersion, oSelf.sVersion);
     oResponse = cHTTPResponse(
       szVersion = sVersion,
-      uzStatusCode = uzStatusCode or 200,
+      uzStatusCode = uzStatusCode,
       szReasonPhrase = szReasonPhrase,
-      ozHeaders = ozHeaders or cHTTPHeaders.foDefaultHeadersForVersion(sVersion),
-      szBody = szBody,
-      szData = szData,
-      azsBodyChunks = azsBodyChunks,
-      ozAdditionalHeaders = ozAdditionalHeaders,
+      o0Headers = o0Headers,
+      s0Body = s0Body,
+      s0Data = s0Data,
+      a0sBodyChunks = a0sBodyChunks,
+      o0AdditionalHeaders = o0AdditionalHeaders,
       bAutomaticallyAddContentLengthHeader = bAutomaticallyAddContentLengthHeader,
     );
-    if szMediaType or szBody or szData or axsBodyChunks:
-      assert szMediaType is None or isinstance(szMediaType, (str, unicode)), \
-          "szMediaType must be a string or None, not %s" % repr(szMediaType);
-      oResponse.szMediaType = str(szMediaType or "application/octet-stream");
-      if szCharSet:
-        assert isinstance(szCharSet, (str, unicode)), \
-            "szCharSet must be a string or None, not %s" % repr(szCharSet);
-        oResponse.szCharSet = str(szCharSet);
+    if s0MediaType or s0Body or s0Data or a0sBodyChunks:
+      assert s0MediaType is None or isinstance(s0MediaType, (str, unicode)), \
+          "s0MediaType must be a string or None, not %s" % repr(s0MediaType);
+      oResponse.s0MediaType = str(s0MediaType or "application/octet-stream");
+      if s0CharSet:
+        assert isinstance(s0CharSet, (str, unicode)), \
+            "s0CharSet must be a string or None, not %s" % repr(s0CharSet);
+        oResponse.s0CharSet = str(s0CharSet);
     else:
-      assert szCharSet is None, \
-          "szCharSet (%s) cannot be defined without a media type!" % repr(szCharSet);
+      assert s0CharSet is None, \
+          "s0CharSet (%s) cannot be defined is s0MediaType is None!" % repr(s0CharSet);
     return oResponse;
   

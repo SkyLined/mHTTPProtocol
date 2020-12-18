@@ -19,7 +19,7 @@ from .cURL import cURL;
 from .fdsURLDecodedNameValuePairsFromString import fdsURLDecodedNameValuePairsFromString;
 from .fsURLEncodedStringFromNameValuePairs import fsURLEncodedStringFromNameValuePairs;
 from .mExceptions import *;
-
+from .mNotProvided import *;
 
 guBrotliCompressionQuality = 5;
 guGZipCompressionLevel = 5;
@@ -28,13 +28,14 @@ guDeflateCompressionLevel = 5;
 
 gbShowAllHeadersInStrReturnValue = False;
 
-def fsASCII(szData, sDataTypeDescription):
+def fsASCII(s0Data, sDataTypeDescription):
   try:
-    return str(szData or "");
+    return str(s0Data or "");
   except:
-    raise AssertionError("%s cannot contain Unicode characters: %s" % (sDataTypeDescription, repr(szData)));
+    raise AssertionError("%s cannot contain Unicode characters: %s" % (sDataTypeDescription, repr(s0Data)));
 
 class iHTTPMessage(object):
+  sDefaultVersion = "HTTP/1.1";
   asSupportedCompressionTypes = ["deflate", "gzip", "x-gzip", "zlib"] + (["br"] if cBrotli else []);
   
   @classmethod
@@ -68,86 +69,101 @@ class iHTTPMessage(object):
     return oSelf.oHeaders.fbHasUniqueValueForName(sName, sValue, oSelf.ozAdditionalHeaders);
   
   @ShowDebugOutput
-  def __init__(oSelf, szVersion = None, ozHeaders = None, szBody = None, szData = None, azsBodyChunks = None, ozAdditionalHeaders = None, bAutomaticallyAddContentLengthHeader = False):
-    assert szBody is None or szData is None, \
-          "Cannot provide both szBody (%s) and szData (%s)!" % (repr(szBody), repr(szData));
-    assert szBody is None or azsBodyChunks is None, \
-          "Cannot provide both szBody (%s) and asBodyChunks (%s)!" % (repr(szBody), repr(azsBodyChunks));
-    assert szData is None or azsBodyChunks is None, \
-          "Cannot provide both szData (%s) and asBodyChunks (%s)!" % (repr(szData), repr(azsBodyChunks));
-    oSelf.sVersion = szVersion if szVersion else "HTTP/1.1";
-    oSelf.oHeaders = ozHeaders or cHTTPHeaders.foDefaultHeadersForVersion(oSelf.sVersion);
-    oSelf.ozAdditionalHeaders = ozAdditionalHeaders;
-    oSelf.__szBody = fsASCII(szBody, "Body") if szBody is not None else None;
-    if szBody is not None:
-      oContentLengthHeader = oSelf.oHeaders.fozGetUniqueHeaderForName("Content-Length");
-      if oContentLengthHeader is None:
+  def __init__(oSelf,
+    szVersion = zNotProvided,
+    o0Headers = None,
+    s0Body = None,
+    s0Data = None,
+    a0sBodyChunks = None,
+    o0AdditionalHeaders = None,
+    bAutomaticallyAddContentLengthHeader = False
+  ):
+    assert s0Body is None or s0Data is None, \
+          "Cannot provide both s0Body (%s) and s0Data (%s)!" % (repr(s0Body), repr(s0Data));
+    assert s0Body is None or a0sBodyChunks is None, \
+          "Cannot provide both s0Body (%s) and a0sBodyChunks (%s)!" % (repr(s0Body), repr(a0sBodyChunks));
+    assert s0Data is None or a0sBodyChunks is None, \
+          "Cannot provide both s0Data (%s) and a0sBodyChunks (%s)!" % (repr(s0Data), repr(a0sBodyChunks));
+    oSelf.sVersion = fxGetFirstProvidedValue(szVersion, oSelf.sDefaultVersion);
+    oSelf.oHeaders = o0Headers or cHTTPHeaders();
+    oSelf.o0AdditionalHeaders = o0AdditionalHeaders;
+    oSelf.__s0Body = fsASCII(s0Body, "Body") if s0Body is not None else None;
+    if s0Body is not None:
+      o0ContentLengthHeader = o0Headers and o0Headers.fo0GetUniqueHeaderForName("Content-Length");
+      if o0ContentLengthHeader is None:
         assert bAutomaticallyAddContentLengthHeader, \
-            "Cannot provide szBody (%s) without a Content-Length header or setting bAutomaticallyAddContentLengthHeader!" % repr(szBody);
-        oSelf.oHeaders.foAddHeaderForNameAndValue("Content-Length", str(len(oSelf.__szBody)));
+            "Cannot provide s0Body (%s) without a \"Content-Length\" header or setting bAutomaticallyAddContentLengthHeader!" % repr(s0Body);
+        oSelf.oHeaders.foAddHeaderForNameAndValue("Content-Length", str(len(oSelf.__s0Body)));
       else:
-        assert long(oContentLengthHeader.sValue) == len(oSelf.__szBody), \
-            "Cannot provide %d bytes szBody (%s) with a Content-Length: %s header!" % \
-            (len(szBody), repr(szBody), oContentLengthHeader.sValue);
-    oSelf.__azsBodyChunks = azsBodyChunks[:] if azsBodyChunks is not None else [] if oSelf.bChunked else None;
-    assert oSelf.__azsBodyChunks is None or oSelf.bChunked, \
-          "Cannot provide asBodyChunks (%s) without a Transfer-Encoded: Chunked header!" % repr(azsBodyChunks);
-    if szData is not None:
-      oSelf.fSetData(szData);
+        assert long(o0ContentLengthHeader.sValue) == len(oSelf.__s0Body), \
+            "Cannot provide %d bytes s0Body (%s) with a Content-Length: %s header!" % \
+            (len(s0Body), repr(s0Body), o0ContentLengthHeader.sValue);
+    bChunked = o0Headers and o0Headers.fbHasUniqueValueForName("Transfer-Encoding", "Chunked");
+    if a0sBodyChunks:
+      assert bChunked, \
+            "Cannot provide a0sBodyChunks (%s) without a \"Transfer-Encoded: Chunked\" header!" % repr(a0sBodyChunks);
+      oSelf.__a0sBodyChunks = a0sBodyChunks[:];
+    else:
+      # If chunked encoding is enabled in the headers but no chunks are provided, default to an empty list.
+      # Unless s0Data is provided; in that case the users is supplying the data for the body of the message directly.
+      oSelf.__a0sBodyChunks = [] if bChunked and not s0Data else None;
+    if s0Data is not None:
+      oSelf.fSetData(s0Data);
   
-  def __fSetContentTypeHeader(oSelf, szContentType, szCharset, szBoundary):
-    if szContentType is None:
+  def __fSetContentTypeHeader(oSelf, s0ContentType, s0Charset, s0Boundary):
+    if s0ContentType is None:
+      # s0Charset and s0Boundary are ignored.
       oSelf.oHeaders.fbRemoveValue("Content-Type");
     else:
-      sContentTypeHeaderValue = szContentType;
-      assert isinstance(szContentType, (str, unicode)) and szContentType.strip() and "\r" not in szContentType and "\n" not in szContentType, \
-          "szContentType must be None or a string that does contins at least one non-whitespace character and does not contain '\\r' or '\\n'";
-      if szCharset:
-        assert isinstance(szCharset, (str, unicode)) and szCharset.strip() and "\r" not in szCharset and "\n" not in szCharset, \
-            "szCharset must be None or a string that does contins at least one non-whitespace character and does not contain '\\r' or '\\n'";
-        sContentTypeHeaderValue += "; charset=" + str(szCharset);
-      if szBoundary:
-        assert isinstance(szBoundary, (str, unicode)) and szBoundary.strip() and "\r" not in szBoundary and "\n" not in szBoundary, \
-            "szBoundary must be None or a string that does contins at least one non-whitespace character and does not contain '\\r' or '\\n'";
-        sContentTypeHeaderValue += "; boundary=" + str(szBoundary);
+      assert isinstance(s0ContentType, (str, unicode)) and s0ContentType.strip() and "\r" not in s0ContentType and "\n" not in s0ContentType, \
+          "s0ContentType must be None or a string that does contins at least one non-whitespace character and does not contain '\\r' or '\\n'";
+      sContentTypeHeaderValue = s0ContentType;
+      if s0Charset:
+        assert isinstance(s0Charset, (str, unicode)) and s0Charset.strip() and "\r" not in s0Charset and "\n" not in s0Charset, \
+            "s0Charset must be None or a string that does contins at least one non-whitespace character and does not contain '\\r' or '\\n'";
+        sContentTypeHeaderValue += "; charset=" + str(s0Charset);
+      if s0Boundary:
+        assert isinstance(s0Boundary, (str, unicode)) and s0Boundary.strip() and "\r" not in s0Boundary and "\n" not in s0Boundary, \
+            "s0Boundary must be None or a string that does contins at least one non-whitespace character and does not contain '\\r' or '\\n'";
+        sContentTypeHeaderValue += "; boundary=" + str(s0Boundary);
       oSelf.oHeaders.fbReplaceHeadersForName("Content-Type", sContentTypeHeaderValue);
-    if oSelf.ozAdditionalHeaders:
-      oSelf.ozAdditionalHeaders.fbRemoveHeadersForName("Content-Type");
+    if oSelf.o0AdditionalHeaders:
+      oSelf.o0AdditionalHeaders.fbRemoveHeadersForName("Content-Type");
   
   @property
-  def szMediaType(oSelf):
-    ozContentTypeHeader = oSelf.fozHeadersGetUnique("Content-Type");
-    return ozContentTypeHeader.sValue.split(";")[0].strip() if ozContentTypeHeader else None;
-  @szMediaType.setter
-  def szMediaType(oSelf, szValue):
-    oSelf.__fSetContentTypeHeader(szValue, oSelf.szCharset, oSelf.szBoundary);
-  
-  @property
-  @ShowDebugOutput
-  def szCharset(oSelf):
-    ozContentTypeHeader = oSelf.fozHeadersGetUnique("Content-Type");
-    return ozContentTypeHeader and ozContentTypeHeader.fszGetNamedValue("charset");
-  @szCharset.setter
-  @ShowDebugOutput
-  def szCharset(oSelf, szValue):
-    oSelf.__fSetContentTypeHeader(oSelf.szMediaType, szValue, oSelf.szBoundary);
+  def s0MediaType(oSelf):
+    o0ContentTypeHeader = oSelf.fo0HeadersGetUnique("Content-Type");
+    return o0ContentTypeHeader.sValue.split(";")[0].strip() if o0ContentTypeHeader else None;
+  @s0MediaType.setter
+  def s0MediaType(oSelf, s0Value):
+    oSelf.__fSetContentTypeHeader(s0Value, oSelf.s0Charset, oSelf.s0Boundary);
   
   @property
   @ShowDebugOutput
-  def szBoundary(oSelf):
-    ozContentTypeHeader = oSelf.fozHeadersGetUnique("Content-Type");
-    return ozContentTypeHeader and ozContentTypeHeader.fszGetNamedValue("boundary");
-  @szBoundary.setter
+  def s0Charset(oSelf):
+    o0ContentTypeHeader = oSelf.fo0HeadersGetUnique("Content-Type");
+    return o0ContentTypeHeader and o0ContentTypeHeader.fs0GetNamedValue("charset");
+  @s0Charset.setter
   @ShowDebugOutput
-  def szBoundary(oSelf, szValue):
-    oSelf.__fSetContentTypeHeader(oSelf.szMediaType, oSelf.szCharset, szValue);
+  def s0Charset(oSelf, s0Value):
+    oSelf.__fSetContentTypeHeader(oSelf.s0MediaType, s0Value, oSelf.s0Boundary);
+  
+  @property
+  @ShowDebugOutput
+  def s0Boundary(oSelf):
+    o0ContentTypeHeader = oSelf.fo0HeadersGetUnique("Content-Type");
+    return o0ContentTypeHeader and o0ContentTypeHeader.fs0GetNamedValue("boundary");
+  @s0Boundary.setter
+  @ShowDebugOutput
+  def s0Boundary(oSelf, s0Value):
+    oSelf.__fSetContentTypeHeader(oSelf.s0MediaType, oSelf.s0Charset, s0Value);
   
   @property
   @ShowDebugOutput
   def bChunked(oSelf):
-    # The Transfer-Encoding is only valid in the first set of headers and not in any additional headers.
-    if oSelf.ozAdditionalHeaders:
-      aoTransferEncodingHeaders = oSelf.ozAdditionalHeaders.faoGetHeadersForName("Transfer-Encoding");
+    if oSelf.o0AdditionalHeaders:
+      # The Transfer-Encoding is only valid in the first set of headers and not in any additional headers.
+      aoTransferEncodingHeaders = oSelf.o0AdditionalHeaders.faoGetHeadersForName("Transfer-Encoding");
       if aoTransferEncodingHeaders:
         raise cHTTPInvalidMessageException(
           "Additional headers contain Transfer-Encoding headers",
@@ -158,12 +174,12 @@ class iHTTPMessage(object):
   @property
   @ShowDebugOutput
   def bCloseConnection(oSelf):
-    ozConnectionHeader = oSelf.fozHeadersGetUnique("Connection");
-    if ozConnectionHeader:
-      if ozConnectionHeader.sLowerName == "close":
+    o0ConnectionHeader = oSelf.fo0HeadersGetUnique("Connection");
+    if o0ConnectionHeader:
+      if o0ConnectionHeader.sLowerName == "close":
         fShowDebugOutput("'Connection: Close' header found");
         return True;
-      if ozConnectionHeader.sLowerName == "keep-alive":
+      if o0ConnectionHeader.sLowerName == "keep-alive":
         fShowDebugOutput("'Connection: Keep-alive' header found");
         return False;
       # Any other values are ignored.
@@ -190,16 +206,16 @@ class iHTTPMessage(object):
   @property
   @ShowDebugOutput
   def asCompressionTypes(oSelf):
-    ozContentEncodingHeader = oSelf.fozHeadersGetUnique("Content-Encoding");
-    return [s.strip() for s in ozContentEncodingHeader.sValue.split(",")] if ozContentEncodingHeader else [];
+    o0ContentEncodingHeader = oSelf.fo0HeadersGetUnique("Content-Encoding");
+    return [s.strip() for s in o0ContentEncodingHeader.sValue.split(",")] if o0ContentEncodingHeader else [];
   
   @property
-  def szData(oSelf):
+  def s0Data(oSelf):
     # Returns decoded and decompressed body based on the Content-Encoding header.
-    szData = oSelf.__szBody if not oSelf.bChunked else "".join(oSelf.__azsBodyChunks);
-    if szData is None:
+    s0Data = oSelf.__s0Body if not oSelf.bChunked else "".join(oSelf.__a0sBodyChunks);
+    if s0Data is None:
       return None;
-    sData = szData; # Never None past this point.
+    sData = s0Data; # Never None past this point.
     asCompressionTypes = oSelf.asCompressionTypes;
     if len(asCompressionTypes) > 0:
       for sCompressionType in reversed(asCompressionTypes):
@@ -217,20 +233,21 @@ class iHTTPMessage(object):
           sData = zlib.decompress(sData, zlib.MAX_WBITS);
         else:
           raise NotImplementedError("Content encoding %s is not supported" % sEncodingType);
-    szCharset = oSelf.szCharset;
-    if szCharset is not None:
+    s0Charset = oSelf.s0Charset;
+    if s0Charset is not None:
       # Convert bytes to unicode using charset defined in Content-Type header.
-      sData = unicode(sData, szCharset, "replace");
+      sData = unicode(sData, s0Charset, "replace");
     return sData;
 
   @ShowDebugOutput
   def fSetData(oSelf, sData, bCloseConnectionInsteadOfUsingContentLength = False):
-    szCharset = oSelf.szCharset;
-    if szCharset is not None:
+    s0Charset = oSelf.s0Charset;
+    if isinstance(s0Charset, unicode):
       # Convert unicode to bytes using charset defined in Content-Type header.
-      sData = str(sData, szCharset);
-    assert isinstance(sData, str), \
-        "sData (%s) must be an byte string or the szCharset property must be set to be able to convert it to a byte string";
+      sData = str(sData, s0Charset);
+    else:
+      assert isinstance(sData, str), \
+          "sData (%s) must be an byte string or a uncideo string (provided the s0Charset property is set to allow conversion to a byte string)";
     # Sets the (optionally) compressed body of the message.
     asCompressionTypes = oSelf.asCompressionTypes;
     if len(asCompressionTypes) > 0:
@@ -257,12 +274,12 @@ class iHTTPMessage(object):
   @ShowDebugOutput
   def sBody(oSelf):
     if not oSelf.bChunked:
-      return oSelf.__szBody;
-    assert not oSelf.bChunked or oSelf.__azsBodyChunks is not None, \
+      return oSelf.__s0Body;
+    assert not oSelf.bChunked or oSelf.__a0sBodyChunks is not None, \
         "wtf!?";
     return "".join([
       "%X\r\n%s\r\n" % (len(sBodyChunk), sBodyChunk) 
-      for sBodyChunk in oSelf.__azsBodyChunks
+      for sBodyChunk in oSelf.__a0sBodyChunks
     ]) + "0\r\n\r\n";
   
   @ShowDebugOutput
@@ -275,15 +292,15 @@ class iHTTPMessage(object):
       oSelf.oHeaders.fbRemoveHeadersForName("Content-Length");
     else:
       oSelf.oHeaders.fbReplaceHeadersForName("Content-Length", str(len(sBody)));
-    oSelf.__szBody = fsASCII(sBody, "Body");
-    oSelf.__azsBodyChunks = None;
+    oSelf.__s0Body = fsASCII(sBody, "Body");
+    oSelf.__a0sBodyChunks = None;
 
   @property
   @ShowDebugOutput
   def asBodyChunks(oSelf):
     assert oSelf.bChunked, \
         "Cannot get body chunks when chunked encoding is not enabled";
-    return oSelf.__azsBodyChunks[:];
+    return oSelf.__a0sBodyChunks[:];
   
   @ShowDebugOutput
   def fSetBodyChunks(oSelf, asBodyChunks):
@@ -292,47 +309,47 @@ class iHTTPMessage(object):
           "Cannot add empty body chunks";
     oSelf.oHeaders.fbRemoveHeadersForName("Content-Length");
     oSelf.oHeaders.fbReplaceHeadersForName("Transfer-Encoding", "Chunked");
-    oSelf.__szBody = None;
-    oSelf.__azsBodyChunks = asBodyChunks[:];
+    oSelf.__s0Body = None;
+    oSelf.__a0sBodyChunks = asBodyChunks[:];
   
   @ShowDebugOutput
   def fAddBodyChunk(oSelf, sBodyChunk):
     assert sBodyChunk, \
         "Cannot add an empty chunk!"
-    assert oSelf.__szBody is None, \
+    assert oSelf.__s0Body is None, \
         "Cannot add a chunk if body is set";
     if not oSelf.bChunked:
       oSelf.fSetBodyChunks([sBodyChunk]);
     else:
-      oSelf.__azsBodyChunks.append(sBodyChunk);
+      oSelf.__a0sBodyChunks.append(sBodyChunk);
   
   @ShowDebugOutput
   def fRemoveBody(oSelf):
     oSelf.oHeaders.fbRemoveHeadersForName("Content-Encoding");
     oSelf.oHeaders.fbRemoveHeadersForName("Content-Length");
     oSelf.oHeaders.fbRemoveHeadersForName("Transfer-Encoding", "Chunked");
-    oSelf.__szBody = None;
-    oSelf.__azsBodyChunks = None;
+    oSelf.__s0Body = None;
+    oSelf.__a0sBodyChunks = None;
   
   # application/x-www-form-urlencoded
   @property
   @ShowDebugOutput
-  def dzForm_sValue_by_sName(oSelf):
+  def d0Form_sValue_by_sName(oSelf):
     # convert the decoded and decompressed body to form name-value pairs.
-    szMediaType = oSelf.szMediaType;
-    if szMediaType is None or szMediaType.lower() != "application/x-www-form-urlencoded":
+    s0MediaType = oSelf.s0MediaType;
+    if s0MediaType is None or s0MediaType.lower() != "application/x-www-form-urlencoded":
       return None;
-    szData = oSelf.szData;
-    return fdsURLDecodedNameValuePairsFromString(szData) if szData else {};
+    s0Data = oSelf.s0Data;
+    return fdsURLDecodedNameValuePairsFromString(s0Data) if s0Data else {};
   
   @ShowDebugOutput
-  def fszGetFormValue(oSelf, sName):
+  def fs0GetFormValue(oSelf, sName):
     # convert the decoded and decompressed body to form name-value pairs and return the value for the given name
     # or None if there is no such value.
-    dzForm_sValue_by_sName = oSelf.dzForm_sValue_by_sName;
-    assert dzForm_sValue_by_sName, \
+    d0Form_sValue_by_sName = oSelf.d0Form_sValue_by_sName;
+    assert d0Form_sValue_by_sName, \
         "HTTP Message does not contain URL encoded form data.";
-    dForm_sValue_by_sName = dzForm_sValue_by_sName;
+    dForm_sValue_by_sName = d0Form_sValue_by_sName;
     sLowerCaseName = sName.lower();
     for (sName, sValue) in dForm_sValue_by_sName.items():
       if sLowerCaseName == sName.lower():
@@ -344,23 +361,27 @@ class iHTTPMessage(object):
     # convert the decoded and decompressed body to form name-value pairs, set the given name to the given value 
     # and update the optionally compressed body to match.
     sLowerStrippedName = sName.strip().lower();
-    dzForm_sValue_by_sName = oSelf.dzForm_sValue_by_sName;
-    assert dzForm_sValue_by_sName, \
+    d0Form_sValue_by_sName = oSelf.d0Form_sValue_by_sName;
+    assert d0Form_sValue_by_sName, \
         "HTTP Message does not contain URL encoded form data.";
-    dForm_sValue_by_sName = dzForm_sValue_by_sName;
+    dForm_sValue_by_sName = d0Form_sValue_by_sName;
     for sOtherName in dForm_sValue_by_sName.keys():
       if sLowerStrippedName == sOtherName.lower():
         del dForm_sValue_by_sName[sOtherName];
     dForm_sValue_by_sName[sName] = sValue;
     oSelf.fSetData(fsURLEncodedStringFromNameValuePairs(dForm_sValue_by_sName));
   
+  @ShowDebugOutput
+  def fRemoveFormValue(oSelf, sName):
+    oSelf.fSetFormValue(sName, None);
+  
   # Authorization
   @ShowDebugOutput
   def ftszGetBasicAuthorization(oSelf):
-    szAuthorization = oSelf.oHeaders.fszGetUniqueHeaderValue("Authorization");
-    if szAuthorization is None:
+    s0Authorization = oSelf.oHeaders.fs0GetUniqueHeaderValue("Authorization");
+    if s0Authorization is None:
       return (None, None);
-    sBasic, sBase64EncodedUserNameColonPassword = szAuthorization.strip().split(" ", 1);
+    sBasic, sBase64EncodedUserNameColonPassword = s0Authorization.strip().split(" ", 1);
     if sBasic.lower() != "basic ":
       return (None, None);
     try:
@@ -391,34 +412,34 @@ class iHTTPMessage(object):
     # Make sure not to call *any* method that has ShowDebugOutput, as this causes
     # fasGetDetails to get called again, resulting in infinite recursion.
     if oSelf.oHeaders.fbHasUniqueValueForName("Transfer-Encoding", "Chunked"):
-      asChunks = oSelf.__azsBodyChunks;
+      asChunks = oSelf.__a0sBodyChunks;
       sBodyDetails = "%d bytes body in %d chunks" % (sum([len(sChunk) for sChunk in asChunks]), len(asChunks));
     else:
-      szBody = oSelf.__szBody;
-      sBodyDetails = "%d bytes body" % len(szBody) if szBody is not None else "no body";
+      s0Body = oSelf.__s0Body;
+      sBodyDetails = "%d bytes body" % len(s0Body) if s0Body is not None else "no body";
     
-    ozContentEncodingHeader = oSelf.oHeaders.fozGetUniqueHeaderForName("Content-Encoding", oSelf.ozAdditionalHeaders);
-    sCompressionTypes = ">".join([s.strip() for s in ozContentEncodingHeader.sValue.split(",")]) if ozContentEncodingHeader else None;
+    o0ContentEncodingHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName("Content-Encoding", oSelf.o0AdditionalHeaders);
+    sCompressionTypes = ">".join([s.strip() for s in o0ContentEncodingHeader.sValue.split(",")]) if o0ContentEncodingHeader else None;
     
     bCloseConnection = oSelf.oHeaders.fbHasUniqueValueForName("Connection", "Close");
     
-    ozHostHeader = oSelf.oHeaders.fozGetUniqueHeaderForName("Host", oSelf.ozAdditionalHeaders);
-    ozContentTypeHeader = oSelf.oHeaders.fozGetUniqueHeaderForName("Content-Type", oSelf.ozAdditionalHeaders);
-    szMediaType = ozContentTypeHeader.sValue.split(";")[0].strip() if ozContentTypeHeader else None;
+    o0HostHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName("Host", oSelf.o0AdditionalHeaders);
+    o0ContentTypeHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName("Content-Type", oSelf.o0AdditionalHeaders);
+    s0MediaType = o0ContentTypeHeader.sValue.split(";")[0].strip() if o0ContentTypeHeader else None;
     return [s for s in [
       oSelf.fsGetStatusLine(),
       "%d headers" % oSelf.oHeaders.uNumberOfHeaders if not gbShowAllHeadersInStrReturnValue else None,
-      "Host: %s" % ozHostHeader.sValue if ozHostHeader and not gbShowAllHeadersInStrReturnValue else None,
+      "Host: %s" % o0HostHeader.sValue if o0HostHeader and not gbShowAllHeadersInStrReturnValue else None,
     ] if s] + (
       [
         "%s: %s" % (oHeader.sName, oHeader.sValue)
         for oHeader in oSelf.oHeaders.faoGetHeaders()
       ] if gbShowAllHeadersInStrReturnValue else []
     ) + [s for s in [
-      szMediaType,
+      s0MediaType,
       sBodyDetails,
       "%s compressed" % sCompressionTypes if sCompressionTypes else None,
-      "%d additional headers" % oSelf.ozAdditionalHeaders.uNumberOfHeaders if oSelf.ozAdditionalHeaders else None,
+      "%d additional headers" % oSelf.o0AdditionalHeaders.uNumberOfHeaders if oSelf.o0AdditionalHeaders else None,
       "close connection" if bCloseConnection else "",
     ] if s];
   

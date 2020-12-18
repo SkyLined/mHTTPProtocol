@@ -1,7 +1,9 @@
 import re, urllib;
-from .mExceptions import *;
+
 from .fdsURLDecodedNameValuePairsFromString import fdsURLDecodedNameValuePairsFromString;
 from .fsURLEncodedStringFromNameValuePairs import fsURLEncodedStringFromNameValuePairs;
+from .mExceptions import *;
+from .mNotProvided import *;
 
 gdtxDefaultPortAndSecure_by_sProtocol = {
   "http": (80, False),
@@ -132,8 +134,8 @@ class cURL(object):
     oURLMatch = rURL.match(sURL);
     if not oURLMatch:
       raise cInvalidURLException("Invalid URL", sURL);
-    (sProtocol, sHostname, szPort, szPath, szQuery, szFragment) = oURLMatch.groups();
-    return cURL(sProtocol, sHostname, long(szPort) if szPort else None, szPath, szQuery, szFragment);
+    (sProtocol, sHostname, s0Port, s0Path, s0Query, s0Fragment) = oURLMatch.groups();
+    return cURL(sProtocol, sHostname, long(s0Port) if s0Port else None, s0Path, s0Query, s0Fragment);
   
   # There is also a non-static version that allows relative URLs:
   def foFromRelativeString(oSelf, sURL, bMustBeRelative = False):
@@ -148,49 +150,55 @@ class cURL(object):
       if bMustBeRelative:
         raise cInvalidURLException("Invalid relative URL", repr(sURL));
       return cURL.foFromString(sURL);
-    (szPath, szQuery, szFragment) = oRelativeURLMatch.groups();
-    if szPath and not szPath.startswith("/"):
+    (s0Path, s0Query, s0Fragment) = oRelativeURLMatch.groups();
+    if s0Path and not s0Path.startswith("/"):
       # Path is relative too
-      szPath = "/" + "/".join(oSelf.asPath[:-1] + [szPath]);
+      s0Path = "/" + "/".join(oSelf.asPath[:-1] + [s0Path]);
     return oSelf.foClone(
-      szPath = szPath or UNSPECIFIED,
+      s0Path = s0Path or UNSPECIFIED,
       # specifying the path but not the query will remove the query
-      szQuery = szQuery if szPath or szQuery else UNSPECIFIED,
+      s0Query = s0Query if s0Path or s0Query else UNSPECIFIED,
       # specifying the path or query but not the fragment will remove the fragment
-      szFragment = szFragment if szPath or szQuery or szFragment else UNSPECIFIED,
+      s0Fragment = s0Fragment if s0Path or s0Query or s0Fragment else UNSPECIFIED,
     );
   
-  def __init__(oSelf, sProtocol, sHostname, uzPort = None, szPath = None, szQuery = None, szFragment = None):
+  def __init__(oSelf, sProtocol, sHostname, u0Port = None, s0Path = None, s0Query = None, s0Fragment = None):
     assert isinstance(sProtocol, str), \
         "sProtocol must be an sASCII string, not %s" % repr(sProtocol);
     assert isinstance(sHostname, str), \
         "sHostname must be an sASCII string, not %s" % repr(sHostname);
-    assert uzPort is None or isinstance(uzPort, (int, long)), \
-        "uzPort must be None, an int or a long, not %s" % repr(uzPort);
-    assert szPath is None or isinstance(szPath, str), \
-        "szPath must be None or an ASCII string, not %s" % repr(szPath);
-    assert szQuery is None or isinstance(szQuery, str), \
-        "szQuery must be None or an ASCII string, not %s" % repr(szQuery);
-    assert szFragment is None or isinstance(szFragment, str), \
-        "szFragment must be None or an ASCII string, not %s" % repr(szFragment);
+    assert u0Port is None or isinstance(u0Port, (int, long)), \
+        "u0Port must be None, an int or a long, not %s" % repr(u0Port);
+    assert s0Path is None or isinstance(s0Path, str), \
+        "s0Path must be None or an ASCII string, not %s" % repr(s0Path);
+    assert s0Query is None or isinstance(s0Query, str), \
+        "s0Query must be None or an ASCII string, not %s" % repr(s0Query);
+    assert s0Fragment is None or isinstance(s0Fragment, str), \
+        "s0Fragment must be None or an ASCII string, not %s" % repr(s0Fragment);
     oSelf.__sProtocol = sProtocol;
     oSelf.__sHostname = sHostname;
-    oSelf.__uzPort = uzPort;
-    oSelf.sPath = szPath; # Use setter so we can reuse code that guarantees this starts with "/"
-    oSelf.__szQuery = szQuery;
-    oSelf.__szFragment = szFragment;
+    oSelf.__u0Port = u0Port;
+    oSelf.sPath = s0Path; # Use setter so we can reuse code that guarantees this starts with "/"
+    oSelf.__s0Query = s0Query;
+    oSelf.__s0Fragment = s0Fragment;
   
   def foClone(oSelf,
-    szProtocol = UNSPECIFIED, szHostname = UNSPECIFIED, uzPort = UNSPECIFIED,
-    szPath = UNSPECIFIED, szQuery = UNSPECIFIED, szFragment = UNSPECIFIED
+    # All these can be provided to create a modified clone of the URL. If they
+    # are not provided, the value from the original is used instead.
+    szProtocol = zNotProvided,
+    szHostname = zNotProvided,
+    u0zPort = zNotProvided,
+    s0zPath = zNotProvided,
+    s0zQuery = zNotProvided,
+    s0zFragment = zNotProvided
   ):
     return cURL(
-      sProtocol = szProtocol if szProtocol is not UNSPECIFIED else oSelf.__sProtocol,
-      sHostname = szHostname if szHostname is not UNSPECIFIED else oSelf.__sHostname,
-      uzPort = uzPort if uzPort is not UNSPECIFIED else oSelf.__uzPort,
-      szPath = szPath if szPath is not UNSPECIFIED else oSelf.__sPath,
-      szQuery = szQuery if szQuery is not UNSPECIFIED else oSelf.__szQuery,
-      szFragment = szFragment if szFragment is not UNSPECIFIED else oSelf.__szFragment,
+      sProtocol   = fxGetFirstProvidedValue(szProtocol, oSelf.__sProtocol),
+      sHostname   = fxGetFirstProvidedValue(szHostname, oSelf.__sHostname),
+      u0Port      = fxGetFirstProvidedValue(u0zPort, oSelf.__u0Port),
+      s0Path      = fxGetFirstProvidedValue(s0zPath, oSelf.__sPath),
+      s0Query     = fxGetFirstProvidedValue(s0zQuery, oSelf.__s0Query),
+      s0Fragment  = fxGetFirstProvidedValue(s0zFragment, oSelf.__s0Fragment),
     );
   
   ### Protocol #################################################################
@@ -215,15 +223,15 @@ class cURL(object):
   ### Port #####################################################################
   @property
   def uPort(oSelf):
-    return oSelf.__uzPort if oSelf.__uzPort is not None else gdtxDefaultPortAndSecure_by_sProtocol[oSelf.__sProtocol][0];
+    return oSelf.__u0Port if oSelf.__u0Port is not None else gdtxDefaultPortAndSecure_by_sProtocol[oSelf.__sProtocol][0];
   @property
-  def uzPort(oSelf):
-    return oSelf.__uzPort;
-  @uzPort.setter
-  def uzPort(oSelf, uzPort = None):
-    assert uzPort is None or isinstance(uzPort, (int, long)), \
-        "uzPort must be None, an int or a long, not %s" % repr(uzPort);
-    oself.__uzPort = uzPort;
+  def u0Port(oSelf):
+    return oSelf.__u0Port;
+  @u0Port.setter
+  def u0Port(oSelf, u0Port = None):
+    assert u0Port is None or isinstance(u0Port, (int, long)), \
+        "u0Port must be None, an int or a long, not %s" % repr(u0Port);
+    oself.__u0Port = u0Port;
   
   ### Path #####################################################################
   @property
@@ -234,10 +242,10 @@ class cURL(object):
   def sPath(oSelf):
     return oSelf.__sPath;
   @sPath.setter
-  def sPath(oSelf, szPath):
-    assert szPath is None or isinstance(szPath, str), \
-        "szPath must be None an sASCII string, not %s" % repr(szPath);
-    oSelf.__sPath = ("/" if (not szPath or szPath[0] != "/") else "") + (szPath or "");
+  def sPath(oSelf, s0Path):
+    assert s0Path is None or isinstance(s0Path, str), \
+        "s0Path must be None an sASCII string, not %s" % repr(s0Path);
+    oSelf.__sPath = ("/" if (not s0Path or s0Path[0] != "/") else "") + (s0Path or "");
   
   @property
   def asPath(oSelf):
@@ -256,23 +264,23 @@ class cURL(object):
   
   ### Query ####################################################################
   @property
-  def szQuery(oSelf):
-    return oSelf.__szQuery;
-  @szQuery.setter
-  def szQuery(oSelf, szQuery):
-    assert szQuery is None or isinstance(szQuery, str), \
-        "szQuery must be None or an sASCII string, not %s" % repr(szQuery);
-    oSelf.__szQuery = szQuery;
+  def s0Query(oSelf):
+    return oSelf.__s0Query;
+  @s0Query.setter
+  def s0Query(oSelf, s0Query):
+    assert s0Query is None or isinstance(s0Query, str), \
+        "s0Query must be None or an sASCII string, not %s" % repr(s0Query);
+    oSelf.__s0Query = s0Query;
   @property
   def dsQueryValue_by_sName(oSelf):
-    return fdsURLDecodedNameValuePairsFromString(oSelf.__szQuery) if oSelf.__szQuery else {};
+    return fdsURLDecodedNameValuePairsFromString(oSelf.__s0Query) if oSelf.__s0Query else {};
   @dsQueryValue_by_sName.setter
-  def dsQueryValue_by_sName(oSelf, dzsQueryValue_by_sName):
-    assert isinstance(dzsQueryValue_by_sName, dict), \
-        "Invalid argument %s" % repr(dzsQueryValue_by_sName);
-    oSelf.__szQuery = fsURLEncodedStringFromNameValuePairs(dzsQueryValue_by_sName);
+  def dsQueryValue_by_sName(oSelf, d0sQueryValue_by_sName):
+    assert isinstance(d0sQueryValue_by_sName, dict), \
+        "Invalid argument %s" % repr(d0sQueryValue_by_sName);
+    oSelf.__s0Query = fsURLEncodedStringFromNameValuePairs(d0sQueryValue_by_sName);
   
-  def fsGetQueryValue(oSelf, sName):
+  def fs0GetQueryValue(oSelf, sName):
     return oSelf.dsQueryValue_by_sName.get(sName);
   
   def fSetQueryValue(oSelf, sName, sValue):
@@ -282,13 +290,13 @@ class cURL(object):
 
   ### Fragment #################################################################
   @property
-  def szFragment(oSelf):
-    return oSelf.__szFragment;
-  @szFragment.setter
-  def szFragment(oSelf, szFragment):
-    assert szFragment is None or isinstance(szFragment, str), \
-        "szFragment must be None or an sASCII string, not %s" % repr(szFragment);
-    oSelf.__szFragment = szFragment;
+  def s0Fragment(oSelf):
+    return oSelf.__s0Fragment;
+  @s0Fragment.setter
+  def s0Fragment(oSelf, s0Fragment):
+    assert s0Fragment is None or isinstance(s0Fragment, str), \
+        "s0Fragment must be None or an sASCII string, not %s" % repr(s0Fragment);
+    oSelf.__s0Fragment = s0Fragment;
     
   ### Convenience ##############################################################
   @property
@@ -297,12 +305,12 @@ class cURL(object):
   
   @property
   def sHostnameAndPort(oSelf):
-    bNonDefaultPort = oSelf.__uzPort not in [None, gdtxDefaultPortAndSecure_by_sProtocol[oSelf.__sProtocol][0]];
-    return oSelf.__sHostname + (":%d" % oSelf.__uzPort if bNonDefaultPort else "");
+    bNonDefaultPort = oSelf.__u0Port not in [None, gdtxDefaultPortAndSecure_by_sProtocol[oSelf.__sProtocol][0]];
+    return oSelf.__sHostname + (":%d" % oSelf.__u0Port if bNonDefaultPort else "");
   
   @property
   def oBase(oSelf):
-    return cURL(sProtocol = oSelf.__sProtocol, sHostname = oSelf.sHostname, uzPort = oSelf.__uzPort);
+    return cURL(sProtocol = oSelf.__sProtocol, sHostname = oSelf.sHostname, u0Port = oSelf.__u0Port);
   
   @property
   def sBase(oSelf):
@@ -312,8 +320,8 @@ class cURL(object):
   def sRelative(oSelf):
     return "%s%s%s" % (
       oSelf.__sPath,
-      ("?%s" % oSelf.__szQuery) if oSelf.__szQuery is not None else "",
-      ("#%s" % oSelf.__szFragment) if oSelf.__szFragment is not None else "",
+      ("?%s" % oSelf.__s0Query) if oSelf.__s0Query is not None else "",
+      ("#%s" % oSelf.__s0Fragment) if oSelf.__s0Fragment is not None else "",
     );
   
   @property
@@ -326,10 +334,10 @@ class cURL(object):
     return [
       "sProtocol: %s" % repr(oSelf.__sProtocol),
       "sHostname: %s" % repr(oSelf.__sHostname),
-      "uzPort: %s" % repr(oSelf.__uzPort),
+      "u0Port: %s" % repr(oSelf.__u0Port),
       "sPath: %s" % repr(oSelf.__sPath),
-      "szQuery: %s" % repr(oSelf.__szQuery),
-      "szFragment: %s" % repr(oSelf.__szFragment),
+      "s0Query: %s" % repr(oSelf.__s0Query),
+      "s0Fragment: %s" % repr(oSelf.__s0Fragment),
     ];
   
   def fsToString(oSelf):
