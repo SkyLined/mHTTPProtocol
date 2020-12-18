@@ -62,13 +62,6 @@ class iHTTPMessage(object):
     return oHeaders;
   
   @ShowDebugOutput
-  def fozHeadersGetUnique(oSelf, sName):
-    return oSelf.oHeaders.fozGetUniqueHeaderForName(sName, oSelf.ozAdditionalHeaders);
-  @ShowDebugOutput
-  def fbHeadersHaveUniqueValue(oSelf, sName, sValue):
-    return oSelf.oHeaders.fbHasUniqueValueForName(sName, sValue, oSelf.ozAdditionalHeaders);
-  
-  @ShowDebugOutput
   def __init__(oSelf,
     szVersion = zNotProvided,
     o0Headers = None,
