@@ -10,8 +10,6 @@ gdtxDefaultPortAndSecure_by_sProtocol = {
   "https": (443, True),
 };
 
-UNSPECIFIED = {};
-
 srIPv4Byte = ( # No support for octal encoding!
   "(?:"
     "25[0-5]"                        # 250-255
