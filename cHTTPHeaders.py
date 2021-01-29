@@ -8,8 +8,8 @@ except: # Do nothing if not available.
   fEnableAllDebugOutput = lambda: None;
   cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
 
-from .mExceptions import *;
 from .cHTTPHeader import cHTTPHeader;
+from .mExceptions import *;
 
 class cHTTPHeaders(object):
   __ddDefaultHeader_sValue_by_sName_by_sHTTPVersion = {
