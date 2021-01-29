@@ -143,23 +143,42 @@ class cURL(object):
       raise cInvalidURLException("Invalid relative URL", repr(sURL));
     oRelativeURLMatch = re.match("^(?:%s)$" % "".join([
       r"(\/?[^:#?]*)?",
-      r"(?:\?([^#]*))?",
-      r"(?:\#(.*))?",
+      r"(\?[^#]*)?",
+      r"(\#.*)?",
     ]), sURL);
     if not oRelativeURLMatch:
       if bMustBeRelative:
         raise cInvalidURLException("Invalid relative URL", repr(sURL));
       return cURL.foFromString(sURL);
-    (s0Path, s0Query, s0Fragment) = oRelativeURLMatch.groups();
-    if s0Path and not s0Path.startswith("/"):
-      # Path is relative too
-      s0Path = "/" + "/".join(oSelf.asPath[:-1] + [s0Path]);
+    (sPath, s0Query, s0Fragment) = oRelativeURLMatch.groups();
+    szPath = (
+      # If a path is provided that starts with "/", override the existing path in the clone.
+      sPath if sPath[:1] == "/" else
+      # If a path is provided that does not starts with "/", make it relative to the existing path in the clone.
+      ("/".join([""] + oSelf.asPath[:-1] + [sPath])) if sPath else
+      # If no path is provided, don't change the path in the clone.
+      zNotProvided
+    );
+    szQuery = (
+      # If a query is provided, it will override the existing query in the clone.
+      s0Query[1:] if s0Query else 
+      # If no query is provided, but a path is, the query will be removed in the clone
+      None if fbIsProvided(szPath) else
+      # If no query or path is provided, the clone will have the same query.
+      zNotProvided
+    );
+    szFragment = (
+      # If a fragment is provided, it will override the existing fragment in the clone.
+      s0Fragment[1:] if s0Fragment else 
+      # If no fragment is provided, but a path and/or query is, the fragment will be removed in the clone
+      None if fbIsProvided(szPath) or fbIsProvided(szQuery) else
+      # If no fragment, query or path is provided, the clone will have the same fragment.
+      zNotProvided
+    );
     return oSelf.foClone(
-      s0Path = s0Path or UNSPECIFIED,
-      # specifying the path but not the query will remove the query
-      s0Query = s0Query if s0Path or s0Query else UNSPECIFIED,
-      # specifying the path or query but not the fragment will remove the fragment
-      s0Fragment = s0Fragment if s0Path or s0Query or s0Fragment else UNSPECIFIED,
+      s0zPath = szPath,
+      s0zQuery = szQuery,
+      s0zFragment = szFragment,
     );
   
   def __init__(oSelf, sProtocol, sHostname, u0Port = None, s0Path = None, s0Query = None, s0Fragment = None):
