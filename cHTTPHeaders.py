@@ -12,29 +12,6 @@ from .cHTTPHeader import cHTTPHeader;
 from .mExceptions import *;
 
 class cHTTPHeaders(object):
-  __ddDefaultHeader_sValue_by_sName_by_sHTTPVersion = {
-    "HTTP/1.0": {
-      "Connection": "Close",
-      "Cache-Control": "No-Cache, Must-Revalidate",
-      "Expires": "Wed, 16 May 2012 04:01:53 GMT", # 1337
-      "Pragma": "No-Cache",
-    },
-    "HTTP/1.1": {
-      "Connection": "Keep-Alive",
-      "Cache-Control": "No-Cache, Must-Revalidate",
-      "Expires": "Wed, 16 May 2012 04:01:53 GMT", # 1337
-      "Pragma": "No-Cache",
-    },
-  };
-
-  @classmethod
-  @ShowDebugOutput
-  def foDefaultHeadersForVersion(cClass, sVersion):
-    dDefaultHeader_sValue_by_sName = cClass.__ddDefaultHeader_sValue_by_sName_by_sHTTPVersion.get(sVersion);
-    assert dDefaultHeader_sValue_by_sName, \
-        "Invalid HTTP version %s" % sVersion;
-    return cClass.foFromDict(dDefaultHeader_sValue_by_sName);
-  
   @classmethod
   @ShowDebugOutput
   def foFromDict(cClass, dxHeaders):

@@ -1,4 +1,4 @@
-import base64, zlib;
+import base64;
 
 try: # mDebugOutput use is Optional
   from mDebugOutput import *;
@@ -10,13 +10,11 @@ except: # Do nothing if not available.
   fEnableAllDebugOutput = lambda: None;
   cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
 
-try:
-  from .cBrotli import cBrotli;
-except Exception:
-  cBrotli = None;
 from .cHTTPHeaders import cHTTPHeaders;
 from .cURL import cURL;
 from .fdsURLDecodedNameValuePairsFromString import fdsURLDecodedNameValuePairsFromString;
+from .fsCompressData import fsCompressData;
+from .fsDecompressData import fsDecompressData;
 from .fsURLEncodedStringFromNameValuePairs import fsURLEncodedStringFromNameValuePairs;
 from .mExceptions import *;
 from .mNotProvided import *;
@@ -36,7 +34,9 @@ def fsASCII(s0Data, sDataTypeDescription):
 
 class iHTTPMessage(object):
   sDefaultVersion = "HTTP/1.1";
-  asSupportedCompressionTypes = ["deflate", "gzip", "x-gzip", "zlib"] + (["br"] if cBrotli else []);
+  ddDefaultHeader_sValue_by_sName_by_sHTTPVersion = None;
+  # A compression type is "supported" if this module can both compress and decompress data of that type.
+  asSupportedCompressionTypes = list(set(fsCompressData.asSupportedCompressionTypes).intersection(fsDecompressData.asSupportedCompressionTypes));
   
   @classmethod
   @ShowDebugOutput
@@ -64,7 +64,7 @@ class iHTTPMessage(object):
   @ShowDebugOutput
   def __init__(oSelf,
     szVersion = zNotProvided,
-    o0Headers = None,
+    o0zHeaders = zNotProvided,
     s0Body = None,
     s0Data = None,
     a0sBodyChunks = None,
@@ -78,11 +78,18 @@ class iHTTPMessage(object):
     assert s0Data is None or a0sBodyChunks is None, \
           "Cannot provide both s0Data (%s) and a0sBodyChunks (%s)!" % (repr(s0Data), repr(a0sBodyChunks));
     oSelf.sVersion = fxGetFirstProvidedValue(szVersion, oSelf.sDefaultVersion);
-    oSelf.oHeaders = o0Headers or cHTTPHeaders();
+    if fbIsProvided(o0zHeaders):
+      oSelf.oHeaders = o0zHeaders or cHTTPHeaders();
+    else:
+      dDefaultHeader_sValue_by_sName = oSelf.ddDefaultHeader_sValue_by_sName_by_sHTTPVersion.get(oSelf.sVersion);
+      assert dDefaultHeader_sValue_by_sName, \
+          "Unsupported HTTP version %s" % repr(sVersion);
+      oSelf.oHeaders = cHTTPHeaders.foFromDict(dDefaultHeader_sValue_by_sName);
+    
     oSelf.o0AdditionalHeaders = o0AdditionalHeaders;
     oSelf.__s0Body = fsASCII(s0Body, "Body") if s0Body is not None else None;
     if s0Body is not None:
-      o0ContentLengthHeader = o0Headers and o0Headers.fo0GetUniqueHeaderForName("Content-Length");
+      o0ContentLengthHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName("Content-Length");
       if o0ContentLengthHeader is None:
         assert bAutomaticallyAddContentLengthHeader, \
             "Cannot provide s0Body (%s) without a \"Content-Length\" header or setting bAutomaticallyAddContentLengthHeader!" % repr(s0Body);
@@ -91,7 +98,7 @@ class iHTTPMessage(object):
         assert long(o0ContentLengthHeader.sValue) == len(oSelf.__s0Body), \
             "Cannot provide %d bytes s0Body (%s) with a Content-Length: %s header!" % \
             (len(s0Body), repr(s0Body), o0ContentLengthHeader.sValue);
-    bChunked = o0Headers and o0Headers.fbHasUniqueValueForName("Transfer-Encoding", "Chunked");
+    bChunked = oSelf.oHeaders.fbHasUniqueValueForName("Transfer-Encoding", "Chunked");
     if a0sBodyChunks:
       assert bChunked, \
             "Cannot provide a0sBodyChunks (%s) without a \"Transfer-Encoded: Chunked\" header!" % repr(a0sBodyChunks);
@@ -125,7 +132,7 @@ class iHTTPMessage(object):
   
   @property
   def s0MediaType(oSelf):
-    o0ContentTypeHeader = oSelf.fo0HeadersGetUnique("Content-Type");
+    o0ContentTypeHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName("Content-Type");
     return o0ContentTypeHeader.sValue.split(";")[0].strip() if o0ContentTypeHeader else None;
   @s0MediaType.setter
   def s0MediaType(oSelf, s0Value):
@@ -134,7 +141,7 @@ class iHTTPMessage(object):
   @property
   @ShowDebugOutput
   def s0Charset(oSelf):
-    o0ContentTypeHeader = oSelf.fo0HeadersGetUnique("Content-Type");
+    o0ContentTypeHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName("Content-Type");
     return o0ContentTypeHeader and o0ContentTypeHeader.fs0GetNamedValue("charset");
   @s0Charset.setter
   @ShowDebugOutput
@@ -144,7 +151,7 @@ class iHTTPMessage(object):
   @property
   @ShowDebugOutput
   def s0Boundary(oSelf):
-    o0ContentTypeHeader = oSelf.fo0HeadersGetUnique("Content-Type");
+    o0ContentTypeHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName("Content-Type");
     return o0ContentTypeHeader and o0ContentTypeHeader.fs0GetNamedValue("boundary");
   @s0Boundary.setter
   @ShowDebugOutput
@@ -163,11 +170,11 @@ class iHTTPMessage(object):
           {"aoTransferEncodingHeaders": aoTransferEncodingHeaders},
         );
     return oSelf.oHeaders.fbHasUniqueValueForName("Transfer-Encoding", "Chunked");
-
+  
   @property
   @ShowDebugOutput
   def bCloseConnection(oSelf):
-    o0ConnectionHeader = oSelf.fo0HeadersGetUnique("Connection");
+    o0ConnectionHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName("Connection");
     if o0ConnectionHeader:
       if o0ConnectionHeader.sLowerName == "close":
         fShowDebugOutput("'Connection: Close' header found");
@@ -199,7 +206,7 @@ class iHTTPMessage(object):
   @property
   @ShowDebugOutput
   def asCompressionTypes(oSelf):
-    o0ContentEncodingHeader = oSelf.fo0HeadersGetUnique("Content-Encoding");
+    o0ContentEncodingHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName("Content-Encoding");
     return [s.strip() for s in o0ContentEncodingHeader.sValue.split(",")] if o0ContentEncodingHeader else [];
   
   @property
@@ -209,29 +216,14 @@ class iHTTPMessage(object):
     if s0Data is None:
       return None;
     sData = s0Data; # Never None past this point.
-    asCompressionTypes = oSelf.asCompressionTypes;
-    if len(asCompressionTypes) > 0:
-      for sCompressionType in reversed(asCompressionTypes):
-        sLowerCompressionType = sCompressionType.lower();
-        if cBrotli and sLowerCompressionType == "br":
-          oBrotli = cBrotli();
-          sData = str(oBrotli.decompress(sData));
-        elif sLowerCompressionType == "deflate":
-          sData = zlib.decompress(sData, -zlib.MAX_WBITS);
-        elif sLowerCompressionType in ["gzip", "x-gzip"]:
-          sData = zlib.decompress(sData, zlib.MAX_WBITS | 0x10);
-        elif sLowerCompressionType == "identity":
-          pass; # No compression.
-        elif sLowerCompressionType == "zlib":
-          sData = zlib.decompress(sData, zlib.MAX_WBITS);
-        else:
-          raise NotImplementedError("Content encoding %s is not supported" % sEncodingType);
+    for sCompressionType in reversed(oSelf.asCompressionTypes):
+      sData = fsDecompressData(sData, sCompressionType);
     s0Charset = oSelf.s0Charset;
     if s0Charset is not None:
       # Convert bytes to unicode using charset defined in Content-Type header.
       sData = unicode(sData, s0Charset, "replace");
     return sData;
-
+  
   @ShowDebugOutput
   def fSetData(oSelf, sData, bCloseConnectionInsteadOfUsingContentLength = False):
     s0Charset = oSelf.s0Charset;
@@ -242,27 +234,10 @@ class iHTTPMessage(object):
       assert isinstance(sData, str), \
           "sData (%s) must be an byte string or a uncideo string (provided the s0Charset property is set to allow conversion to a byte string)";
     # Sets the (optionally) compressed body of the message.
-    asCompressionTypes = oSelf.asCompressionTypes;
-    if len(asCompressionTypes) > 0:
-      for sCompressionType in reversed(asCompressionTypes):
-        sLowerCompressionType = sCompressionType.lower();
-        if cBrotli and sLowerCompressionType == "br":
-          sData = cBrotli().compress(sData, guBrotliCompressionQuality);
-        elif sLowerCompressionType == "deflate":
-          oCompressionObject = zlib.compressobj(guDeflateCompressionLevel, zlib.DEFLATED, -zlib.MAX_WBITS);
-          sData = oCompressionObject.compress(sData) + oCompressionObject.flush();
-        elif sLowerCompressionType in ["gzip", "x-gzip"]:
-          oCompressionObject = zlib.compressobj(guGZipCompressionLevel, zlib.DEFLATED, zlib.MAX_WBITS | 0x10);
-          sData = oCompressionObject.compress(sData) + oCompressionObject.flush();
-        elif sLowerCompressionType == "identity":
-          pass; # No compression.
-        elif sLowerCompressionType == "zlib":
-          oCompressionObject = zlib.compressobj(guZLibCompressionLevel, zlib.DEFLATED, zlib.MAX_WBITS);
-          sData = oCompressionObject.compress(sData) + oCompressionObject.flush();
-        else:
-          raise NotImplementedError("Content encoding %s is not supported" % sEncodingType);
+    for sCompressionType in reversed(oSelf.asCompressionTypes):
+      sData = fsCompressData(sData, sCompressionType);
     oSelf.fSetBody(sData, bCloseConnectionInsteadOfUsingContentLength);
-
+  
   @property
   @ShowDebugOutput
   def sBody(oSelf):
@@ -287,7 +262,7 @@ class iHTTPMessage(object):
       oSelf.oHeaders.fbReplaceHeadersForName("Content-Length", str(len(sBody)));
     oSelf.__s0Body = fsASCII(sBody, "Body");
     oSelf.__a0sBodyChunks = None;
-
+  
   @property
   @ShowDebugOutput
   def asBodyChunks(oSelf):
@@ -445,3 +420,4 @@ class iHTTPMessage(object):
   
   def __str__(oSelf):
     return "%s#%X{%s}" % (oSelf.__class__.__name__, id(oSelf), ", ".join(oSelf.fasGetDetails()));
+

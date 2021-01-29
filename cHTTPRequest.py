@@ -1,3 +1,5 @@
+import re;
+
 try: # mDebugOutput use is Optional
   from mDebugOutput import *;
 except: # Do nothing if not available.
@@ -12,10 +14,30 @@ from .cHTTPHeaders import cHTTPHeaders;
 from .cHTTPResponse import cHTTPResponse;
 from .iHTTPMessage import iHTTPMessage;
 from .cURL import cURL;
+from .fsDecompressData import fsDecompressData;
 from .mExceptions import *;
 from .mNotProvided import *;
 
+gsSupportedCompressionTypes= ", ".join(fsDecompressData.asSupportedCompressionTypes);
+gsUserAgent = "Mozilla/5.0 (compatible)";
+
 class cHTTPRequest(iHTTPMessage):
+  ddDefaultHeader_sValue_by_sName_by_sHTTPVersion = {
+    "HTTP/1.0": {
+      "Accept": "*/*",
+      "Accept-Encoding": gsSupportedCompressionTypes,
+      "Connection": "Close",
+      "User-Agent": gsUserAgent,
+    },
+    "HTTP/1.1": {
+      "Accept": "*/*",
+      "Accept-Encoding": gsSupportedCompressionTypes,
+      "Cache-Control": "No-Cache, Must-Revalidate",
+      "Connection": "Keep-Alive",
+      "User-Agent": gsUserAgent,
+    },
+  };
+  
   @staticmethod
   @ShowDebugOutput
   def fdxParseStatusLine(sStatusLine):
@@ -33,7 +55,7 @@ class cHTTPRequest(iHTTPMessage):
     sURL,
     szMethod = zNotProvided,
     szVersion = zNotProvided,
-    o0zHeaders = None,
+    o0zHeaders = zNotProvided,
     s0Body = None,
     s0Data = None,
     a0sBodyChunks = None,
@@ -41,17 +63,10 @@ class cHTTPRequest(iHTTPMessage):
     bAutomaticallyAddContentLengthHeader = False
   ):
     oSelf.__sURL = sURL;
-    oSelf.__sMethod = fxGetFirstProvidedValue(szMethod, "POST" if (szBody or szData or azsBodyChunks) else "GET");
-    o0Headers = o0zHeaders if fbIsProvided(o0zHeaders) else cHTTPHeaders.foFromDict({
-      "Accept": "*/*",
-      "Accept-Encoding": ", ".join(oSelf.asSupportedCompressionTypes),
-      "Cache-Control": "No-Cache, Must-Revalidate",
-      "Connection": "Keep-Alive",
-      "Pragma": "No-Cache",
-    });
+    oSelf.__sMethod = fxGetFirstProvidedValue(szMethod, "POST" if (s0Body or s0Data or a0sBodyChunks) else "GET");
     iHTTPMessage.__init__(oSelf,
       szVersion,
-      o0Headers,
+      o0zHeaders,
       s0Body,
       s0Data,
       a0sBodyChunks,
@@ -69,10 +84,10 @@ class cHTTPRequest(iHTTPMessage):
   def sMethod(oSelf):
     return oSelf.__sMethod;
   @sMethod.setter
-  def sMethod(oSelf, sMethod): # Setting "" results in "POST" if there is a body and "GET" if there is none.
-    assert isinstance(sMethod, str), \
-        "The reason phrase must be a str, not %s" % repr(sReasonPhrase);
-    oSelf.__sMethod = sMethod or ("POST" if (szBody or szData or azsBodyChunks) else "GET");
+  def sMethod(oSelf, sMethod):
+    assert isinstance(sMethod, str) and re.match("^[A-Z]+$", sMethod), \
+        "The reason phrase must be a 'str' with one or more uppercase letters, not %s" % repr(sReasonPhrase);
+    oSelf.__sMethod = sMethod;
   
   @ShowDebugOutput
   def foClone(oSelf):
@@ -88,8 +103,8 @@ class cHTTPRequest(iHTTPMessage):
     szVersion = zNotProvided,
     uzStatusCode = zNotProvided,
     szReasonPhrase = zNotProvided,
+    o0zHeaders = zNotProvided,
     s0Body = None,
-    o0Headers = None,
     s0Data = None,
     a0sBodyChunks = None,
     s0CharSet = None,
@@ -102,7 +117,7 @@ class cHTTPRequest(iHTTPMessage):
       szVersion = sVersion,
       uzStatusCode = uzStatusCode,
       szReasonPhrase = szReasonPhrase,
-      o0Headers = o0Headers,
+      o0zHeaders = o0zHeaders,
       s0Body = s0Body,
       s0Data = s0Data,
       a0sBodyChunks = a0sBodyChunks,

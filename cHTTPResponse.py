@@ -15,6 +15,20 @@ from .mNotProvided import *;
 
 class cHTTPResponse(iHTTPMessage):
   uDefaultStatusCode = 200;
+  ddDefaultHeader_sValue_by_sName_by_sHTTPVersion = {
+    "HTTP/1.0": {
+      "Connection": "Close",
+      "Cache-Control": "No-Cache, Must-Revalidate",
+      "Expires": "Wed, 16 May 2012 04:01:53 GMT", # 1337
+      "Pragma": "No-Cache",
+    },
+    "HTTP/1.1": {
+      "Connection": "Keep-Alive",
+      "Cache-Control": "No-Cache, Must-Revalidate",
+      "Expires": "Wed, 16 May 2012 04:01:53 GMT", # 1337
+    },
+  };
+  
   @staticmethod
   @ShowDebugOutput
   def fdxParseStatusLine(sStatusLine):
@@ -38,7 +52,7 @@ class cHTTPResponse(iHTTPMessage):
   
   @staticmethod
   def fsGetDefaultReasonPhraseForStatus(uStatusCode):
-    return dsHTTPCommonReasonPhrase_by_uStatusCode.get(oSelf.__uStatusCode, "Unspecified");  
+    return dsHTTPCommonReasonPhrase_by_uStatusCode.get(uStatusCode, "Unspecified");  
   
   @ShowDebugOutput
   def __init__(oSelf,
@@ -59,7 +73,7 @@ class cHTTPResponse(iHTTPMessage):
     );
     iHTTPMessage.__init__(oSelf,
       szVersion,
-      o0zHeaders if fbIsProvided(o0zHeader) else cHTTPHeaders.foDefaultResponseHeadersForVersion(sVersion),
+      o0zHeaders,
       s0Body,
       s0Data,
       a0sBodyChunks,
