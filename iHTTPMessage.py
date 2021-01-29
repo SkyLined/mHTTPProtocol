@@ -10,6 +10,8 @@ except: # Do nothing if not available.
   fEnableAllDebugOutput = lambda: None;
   cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
 
+from mNotProvided import *;
+
 from .cHTTPHeaders import cHTTPHeaders;
 from .cURL import cURL;
 from .fdsURLDecodedNameValuePairsFromString import fdsURLDecodedNameValuePairsFromString;
@@ -17,7 +19,6 @@ from .fsCompressData import fsCompressData;
 from .fsDecompressData import fsDecompressData;
 from .fsURLEncodedStringFromNameValuePairs import fsURLEncodedStringFromNameValuePairs;
 from .mExceptions import *;
-from .mNotProvided import *;
 
 guBrotliCompressionQuality = 5;
 guGZipCompressionLevel = 5;

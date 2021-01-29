@@ -8,10 +8,11 @@ except: # Do nothing if not available.
   fEnableAllDebugOutput = lambda: None;
   cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
 
+from mNotProvided import *;
+
 from .dsHTTPCommonReasonPhrase_by_uStatusCode import dsHTTPCommonReasonPhrase_by_uStatusCode;
 from .iHTTPMessage import iHTTPMessage;
 from .mExceptions import *;
-from .mNotProvided import *;
 
 class cHTTPResponse(iHTTPMessage):
   uDefaultStatusCode = 200;

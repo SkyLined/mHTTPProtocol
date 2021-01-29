@@ -3,6 +3,7 @@
   "asOptionalProductNames": [
     "cFileSystemItem",
     "mDebugOutput", 
+    "mNotProvided",
     "mWindowsSDK", 
     "oConsole"
   ], 

@@ -1,9 +1,10 @@
 import re, urllib;
 
+from mNotProvided import *;
+
 from .fdsURLDecodedNameValuePairsFromString import fdsURLDecodedNameValuePairsFromString;
 from .fsURLEncodedStringFromNameValuePairs import fsURLEncodedStringFromNameValuePairs;
 from .mExceptions import *;
-from .mNotProvided import *;
 
 gdtxDefaultPortAndSecure_by_sProtocol = {
   "http": (80, False),

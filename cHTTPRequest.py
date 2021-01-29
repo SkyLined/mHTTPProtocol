@@ -10,13 +10,14 @@ except: # Do nothing if not available.
   fEnableAllDebugOutput = lambda: None;
   cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
 
+from mNotProvided import *;
+
 from .cHTTPHeaders import cHTTPHeaders;
 from .cHTTPResponse import cHTTPResponse;
 from .iHTTPMessage import iHTTPMessage;
 from .cURL import cURL;
 from .fsDecompressData import fsDecompressData;
 from .mExceptions import *;
-from .mNotProvided import *;
 
 gsSupportedCompressionTypes= ", ".join(fsDecompressData.asSupportedCompressionTypes);
 gsUserAgent = "Mozilla/5.0 (compatible)";
