@@ -1,4 +1,6 @@
 {
+  "asProductTypes": ["Python module"],
+  "sPythonModuleName": "mHTTPProtocol",
   "asDependentOnProductNames": [], 
   "asOptionalProductNames": [
     "cFileSystemItem",
