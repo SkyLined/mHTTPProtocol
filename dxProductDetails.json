@@ -1,15 +1,19 @@
 {
-  "asProductTypes": ["Python module"],
-  "sPythonModuleName": "mHTTPProtocol",
   "asDependentOnProductNames": [], 
+  "asJavaScriptModuleNames": [], 
   "asOptionalProductNames": [
-    "cFileSystemItem",
+    "cFileSystemItem", 
     "mDebugOutput", 
-    "mNotProvided",
+    "mNotProvided", 
     "mWindowsSDK", 
     "oConsole"
   ], 
-  "oProductVersion": "2020-08-12 11:48", 
+  "asPHPModuleNames": [], 
+  "asProductTypes": [
+    "Python module"
+  ], 
+  "asPythonApplicationNames": [], 
+  "oProductVersion": "2021-03-01 09:14", 
   "oRepository": {
     "sBranch": "master", 
     "sRepositoryName": "mHTTPProtocol", 
@@ -20,5 +24,6 @@
   "sLicenseServerURL": null, 
   "sProductAuthor": "SkyLined", 
   "sProductName": "mHTTPProtocol", 
-  "sProductURL": "https://github.com/SkyLined/mHTTPProtocol"
+  "sProductURL": "https://github.com/SkyLined/mHTTPProtocol", 
+  "sPythonModuleName": "mHTTPProtocol"
 }
