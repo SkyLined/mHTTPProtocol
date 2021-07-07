@@ -1,106 +1,102 @@
 try: # mDebugOutput use is Optional
-  from mDebugOutput import *;
-except: # Do nothing if not available.
-  ShowDebugOutput = lambda fxFunction: fxFunction;
-  fShowDebugOutput = lambda sMessage: None;
-  fEnableDebugOutputForModule = lambda mModule: None;
-  fEnableDebugOutputForClass = lambda cClass: None;
-  fEnableAllDebugOutput = lambda: None;
-  cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
+  from mDebugOutput import ShowDebugOutput, fShowDebugOutput;
+except ModuleNotFoundError as oException:
+  if oException.args[0] != "No module named 'mDebugOutput'":
+    raise;
+  ShowDebugOutput = fShowDebugOutput = lambda x: x; # NOP
+
+from mNotProvided import *;
 
 class cHTTPHeader(object):
-  def __init__(oSelf, sName, *tsValueLines):
-    oSelf.__sLowerStippedName = None;
-    oSelf.__sLowerStippedValue = None;
-    oSelf.__sName = None;
-    oSelf.__asValueLines = None;
-    oSelf.sName = sName;
-    oSelf.asValueLines = list(tsValueLines);
+  def __init__(oSelf, sbName, *tsbValueLines):
+    oSelf.__sbLowerStippedName = None;
+    oSelf.__sbLowerStippedValue = None;
+    oSelf.__sbName = None;
+    oSelf.__asbValueLines = None;
+    oSelf.sbName = sbName;
+    oSelf.asbValueLines = list(tsbValueLines);
   
   @property
-  def sName(oSelf):
-    return oSelf.__sName.strip();
+  def sbName(oSelf):
+    return oSelf.__sbName.strip();
   
-  @sName.setter
-  def sName(oSelf, sName):
-    assert isinstance(sName, str), \
-        "HTTP header names must be strings, not %s" % repr(sName);
-    if sName != oSelf.__sName:
-      oSelf.__sName = sName;
-      oSelf.__sLowerName = None;
-  
-  @property
-  def sLowerName(oSelf):
-    if oSelf.__sLowerStippedName is None:
-      oSelf.__sLowerStippedName = oSelf.sName.lower();
-    return oSelf.__sLowerStippedName;
+  @sbName.setter
+  def sbName(oSelf, sbName):
+    fAssertType("sbName", sbName, bytes);
+    if sbName != oSelf.__sbName:
+      oSelf.__sbName = sbName;
+      oSelf.__sbLowerName = None;
   
   @property
-  def asValueLines(oSelf):
-    return list(oSelf.__asValueLines);
-  
-  @asValueLines.setter
-  def asValueLines(oSelf, asValueLines):
-    oSelf.__asValueLines = [];
-    oSelf.fAddValueLines(asValueLines);
-  
-  def fAddValueLines(oSelf, asValueLines):
-    assert isinstance(asValueLines, list), \
-        "asValueLines must be a list of strings, not %s" % repr(asValueLines);
-    for sValueLine in asValueLines:
-      oSelf.fAddValueLine(sValueLine);
-  
-  def fAddValueLine(oSelf, sValueLine):
-    assert isinstance(sValueLine, str), \
-        "HTTP header values must be strings, not %s" % repr(sValueLine);
-    assert len(sValueLine.strip()) > 0, \
-        "HTTP header values must contain a value, not %s" % repr(sValueLine);
-    assert len(oSelf.__asValueLines) == 0 or sValueLine[0] in " \t", \
-        "HTTP header value lines after the first must start with whitespace, not %s" % repr(sValueLine);
-    oSelf.__asValueLines.append(sValueLine);
+  def sbLowerName(oSelf):
+    if oSelf.__sbLowerStippedName is None:
+      oSelf.__sbLowerStippedName = oSelf.sbName.lower();
+    return oSelf.__sbLowerStippedName;
   
   @property
-  def sValue(oSelf):
-    return " ".join([
-      sValueLine.strip()
-      for sValueLine in oSelf.__asValueLines
+  def asbValueLines(oSelf):
+    return list(oSelf.__asbValueLines);
+  
+  @asbValueLines.setter
+  def asbValueLines(oSelf, asbValueLines):
+    oSelf.__asbValueLines = [];
+    oSelf.fAddValueLines(asbValueLines);
+  
+  def fAddValueLines(oSelf, asbValueLines):
+    fAssertType("asbValueLines", asbValueLines, [bytes]);
+    for sbValueLine in asbValueLines:
+      oSelf.fAddValueLine(sbValueLine);
+  
+  def fAddValueLine(oSelf, sbValueLine):
+    fAssertType("sbValueLine", sbValueLine, bytes);
+    assert len(sbValueLine.strip()) > 0, \
+        "HTTP header values must contain a value, not %s" % repr(sbValueLine);
+    assert len(oSelf.__asbValueLines) == 0 or sbValueLine[0] in b" \t", \
+        "HTTP header value lines after the first must start with whitespace, not %s" % repr(sbValueLine);
+    oSelf.__asbValueLines.append(sbValueLine);
+  
+  @property
+  def sbValue(oSelf):
+    return b" ".join([
+      sbValueLine.strip()
+      for sbValueLine in oSelf.__asbValueLines
     ]);
   
-  @sValue.setter
-  def sValue(oSelf, sValue):
-    oSelf.__asValueLines = [];
-    oSelf.fAddValueLine(sValue);
+  @sbValue.setter
+  def sbValue(oSelf, sbValue):
+    oSelf.__asbValueLines = [];
+    oSelf.fAddValueLine(sbValue);
   
   @property
-  def sLowerValue(oSelf):
-    if oSelf.__sLowerStippedValue is None:
-      oSelf.__sLowerStippedValue = oSelf.sValue.lower();
-    return oSelf.__sLowerStippedValue;
+  def sbLowerValue(oSelf):
+    if oSelf.__sbLowerStippedValue is None:
+      oSelf.__sbLowerStippedValue = oSelf.sbValue.lower();
+    return oSelf.__sbLowerStippedValue;
   
   def foClone(oSelf):
-    return oSelf.__class__(oSelf.__sName, *oSelf.__asValueLines);
+    return oSelf.__class__(oSelf.__sbName, *oSelf.__asbValueLines);
   
-  def fs0GetNamedValue(oSelf, sValueName):
+  def fsb0GetNamedValue(oSelf, sbValueName):
     # Look through the named values after the first ';' from last to first.
     # Return as soon as one is seen; this will return the last value in the header.
-    sLowerValueName = sValueName.lower();
-    for sNameValuePair in reversed(oSelf.sLowerValue.split(";")[1:]):
-      tsNameValuePair = sNameValuePair.split("=", 1);
-      if len(tsNameValuePair) == 2:
-        sName, sValue = tsNameValuePair;
-        if sName.strip().lower() == sLowerValueName:
-          return sValue;
+    sbLowerValueName = sbValueName.lower();
+    for sbNameValuePair in reversed(oSelf.sbLowerValue.split(b";")[1:]):
+      tsbNameValuePair = sbNameValuePair.split(b"=", 1);
+      if len(tsbNameValuePair) == 2:
+        sbName, sbValue = tsbNameValuePair;
+        if sbName.strip().lower() == sbLowerValueName:
+          return sbValue;
     return None;
   
-  def fasGetHeaderLines(oSelf):
-    asHeaderLines = ["%s:%s" % (oSelf.__sName, oSelf.__asValueLines[0])];
-    if len(oSelf.__asValueLines) > 1:
-      asHeaderLines += oSelf.__asValueLines[1:];
-    return asHeaderLines;
-
+  def fasbGetHeaderLines(oSelf):
+    asbHeaderLines = [b"%s:%s" % (oSelf.__sbName, oSelf.__asbValueLines[0])];
+    if len(oSelf.__asbValueLines) > 1:
+      asbHeaderLines += oSelf.__asbValueLines[1:];
+    return asbHeaderLines;
+  
   def fasGetDetails(oSelf):
     return [s for s in [
-      "%s:%s" % (oSelf.__sName, "\n".join(oSelf.__asValueLines)),
+      str(b"%s:%s" % (oSelf.__sbName, b" ".join(oSelf.__asbValueLines)), "ascii", "strict"),
     ] if s];
   
   def __repr__(oSelf):

@@ -1,12 +1,11 @@
 try: # mDebugOutput use is Optional
-  from mDebugOutput import *;
-except: # Do nothing if not available.
-  ShowDebugOutput = lambda fxFunction: fxFunction;
-  fShowDebugOutput = lambda sMessage: None;
-  fEnableDebugOutputForModule = lambda mModule: None;
-  fEnableDebugOutputForClass = lambda cClass: None;
-  fEnableAllDebugOutput = lambda: None;
-  cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
+  from mDebugOutput import ShowDebugOutput, fShowDebugOutput;
+except ModuleNotFoundError as oException:
+  if oException.args[0] != "No module named 'mDebugOutput'":
+    raise;
+  ShowDebugOutput = fShowDebugOutput = lambda x: x; # NOP
+
+from mNotProvided import *;
 
 from .cHTTPHeader import cHTTPHeader;
 from .mExceptions import *;
@@ -15,14 +14,12 @@ class cHTTPHeaders(object):
   @classmethod
   @ShowDebugOutput
   def foFromDict(cClass, dxHeaders):
-    return cClass([cHTTPHeader(sName, sValue) for (sName, sValue) in dxHeaders.items()]);
+    return cClass([cHTTPHeader(sbName, sbValue) for (sbName, sbValue) in dxHeaders.items()]);
   
   @ShowDebugOutput
   def __init__(oSelf, a0oHeaders = None):
+    fAssertType("a0oHeaders", a0oHeaders, [cHTTPHeader], None);
     oSelf.__aoHeaders = a0oHeaders or [];
-    for oHeader in oSelf.__aoHeaders:
-      assert isinstance(oHeader, cHTTPHeader), \
-          "aoHeaders must contain only cHTTPHeader instances, not %s" % repr(oHeader);
   
   def foClone(oSelf):
     return oSelf.__class__([oHeader.foClone() for oHeader in oSelf.__aoHeaders]);
@@ -35,148 +32,138 @@ class cHTTPHeaders(object):
     return oSelf.__aoHeaders[:];
   
   @ShowDebugOutput
-  def faoGetHeadersForName(oSelf, sName):
-    assert isinstance(sName, str), \
-        "sName must be a string, not %s" % repr(sName);
-    sLowerName = sName.lower();
-    return [oHeader for oHeader in oSelf.__aoHeaders if oHeader.sLowerName == sLowerName];
+  def faoGetHeadersForName(oSelf, sbName):
+    fAssertType("sbName", sbName, bytes);
+    sbLowerName = sbName.lower();
+    return [oHeader for oHeader in oSelf.__aoHeaders if oHeader.sbLowerName == sbLowerName];
   
   @ShowDebugOutput
-  def fo0GetUniqueHeaderForName(oSelf, sName, o0AdditionalHeaders = None):
+  def fo0GetUniqueHeaderForName(oSelf, sbName, o0AdditionalHeaders = None):
     # returns the first header with the given name.
     # will throw a cHTTPInvalidMessageException if there are multiple headers
     # with the given name with different values, ignoring case.
-    aoHeaders = oSelf.faoGetHeadersForName(sName);
+    aoHeaders = oSelf.faoGetHeadersForName(sbName);
     if o0AdditionalHeaders:
-      aoHeaders += o0AdditionalHeaders.faoGetHeadersForName(sName);
+      aoHeaders += o0AdditionalHeaders.faoGetHeadersForName(sbName);
     if len(aoHeaders) == 0:
       return None;
     if len(aoHeaders) > 1:
-      uNumberOfUniqueHeaderValues = len(set([oHeader.sLowerValue for oHeader in aoHeaders]));
+      uNumberOfUniqueHeaderValues = len(set([oHeader.sbLowerValue for oHeader in aoHeaders]));
       if uNumberOfUniqueHeaderValues > 1:
         raise cHTTPInvalidMessageException(
-          "A valid HTTP message cannot have more than 1 unique value for the %s header" % sName,
-          aoHeaders
+          "A valid HTTP message cannot have more than 1 unique value for the %s header" % sbName,
+          {"aoHeaders": aoHeaders},
         );
     return aoHeaders[0];
   
   def fAddHeader(oSelf, oHeader):
-    assert isinstance(oHeader, cHTTPHeader), \
-        "oHeader must be a cHTTPHeader instance, not %s" % repr(oHeader);
-    fShowDebugOutput("Adding %s:%s header." % (oHeader.sName, "\n".join(oHeader.asValueLines)));
+    fAssertType("oHeader", oHeader, cHTTPHeader);
+    fShowDebugOutput("Adding %s:%s header." % (oHeader.sbName, b"\n".join(oHeader.asbValueLines)));
     oSelf.__aoHeaders.append(oHeader);
   
   def fbRemoveHeader(oSelf, oHeader):
-    assert isinstance(oHeader, cHTTPHeader), \
-        "oHeader must be a cHTTPHeader instance, not %s" % repr(oHeader);
+    fAssertType("oHeader", oHeader, cHTTPHeader);
     if oHeader not in oSelf.__aoHeaders:
       return False;
-    fShowDebugOutput("Removing %s:%s header." % (oHeader.sName, "\n".join(oHeader.asValueLines)));
+    fShowDebugOutput("Removing %s:%s header." % (oHeader.sbName, "b\n".join(oHeader.asbValueLines)));
     oSelf.__aoHeaders.remove(oHeader);
     return True;
   
   def fbReplaceHeaders(oSelf, oHeader):
-    assert isinstance(oHeader, cHTTPHeader), \
-        "oHeader must be a cHTTPHeader instance, not %s" % repr(oHeader);
+    fAssertType("oHeader", oHeader, cHTTPHeader);
     bReplaced = False;
     for oOldHeader in oSelf.__aoHeaders[:]:
-      if oOldHeader.sLowerName == oHeader.sLowerName:
+      if oOldHeader.sbLowerName == oHeader.sbLowerName:
         oSelf.__aoHeaders.remove(oOldHeader);
-        fShowDebugOutput("Removing %s:%s header." % (oOldHeader.sName, "\n".join(oOldHeader.asValueLines)));
+        fShowDebugOutput("Removing %s:%s header." % (oOldHeader.sbName, b"\n".join(oOldHeader.asbValueLines)));
         bReplaced = True;
-    fShowDebugOutput("Adding %s:%s header." % (oHeader.sName, "\n".join(oHeader.asValueLines)));
+    fShowDebugOutput("Adding %s:%s header." % (oHeader.sbName, b"\n".join(oHeader.asbValueLines)));
     oSelf.__aoHeaders.append(oHeader);
     return bReplaced;
   
-  def foAddHeaderForNameAndValue(oSelf, sName, sValue):
-    fShowDebugOutput("Adding %s:%s header." % (sName, sValue));
-    oSelf.__aoHeaders.append(cHTTPHeader(sName, (" " if sValue[:1] != " " else "") + sValue));
+  def foAddHeaderForNameAndValue(oSelf, sbName, sbValue):
+    fShowDebugOutput("Adding %s:%s header." % (sbName, sbValue));
+    oSelf.__aoHeaders.append(cHTTPHeader(sbName, (b" " if sbValue[:1] != b" " else b"") + sbValue));
   
   @ShowDebugOutput
-  def fbHasValueForName(oSelf, sName, s0Value = None):
-    assert isinstance(sName, str), \
-        "sName must be a string, not %s" % repr(sName);
-    assert s0Value is None or isinstance(s0Value, str), \
-        "s0Value must be a string or None, not %s" % repr(sValue);
-    sLowerName = sName.lower();
-    s0LowerValue = s0Value.lower() if s0Value is not None else None;
+  def fbHasValueForName(oSelf, sbName, sb0Value = None):
+    fAssertType("sbName", sbName, bytes);
+    assert sb0Value is None or isinstance(sb0Value, bytes), \
+        "sb0Value must be 'bytes' or 'None', not %s:%s" % (type(sb0Value), repr(sb0Value));
+    sbLowerName = sbName.lower();
+    sb0LowerValue = sb0Value.lower() if sb0Value is not None else None;
     for oHeader in oSelf.__aoHeaders:
-      if oHeader.sLowerName == sLowerName:
-        if s0Value is None or oHeader.sLowerValue == s0LowerValue:
-          fShowDebugOutput("Found %s:%s header." % (oHeader.sName, "\n".join(oHeader.asValueLines)));
+      if oHeader.sbLowerName == sbLowerName:
+        if sb0Value is None or oHeader.sbLowerValue == sb0LowerValue:
+          fShowDebugOutput("Found %s:%s header." % (oHeader.sbName, b"\n".join(oHeader.asbValueLines)));
           return True;
     return False;
   
   @ShowDebugOutput
-  def fbHasUniqueValueForName(oSelf, sName, sValue, o0AdditionalHeaders = None):
+  def fbHasUniqueValueForName(oSelf, sbName, sbValue, o0AdditionalHeaders = None):
     # returns true if all headers with the given name have the provided value,
     # ignoring case.
     # will throw a cHTTPInvalidMessageException if there are multiple headers
     # with the given name with different values, ignoring case.
-    assert isinstance(sName, str), \
-        "sName must be a string, not %s" % repr(sName);
-    assert isinstance(sValue, str), \
-        "sValue must be a string, not %s" % repr(sValue);
-    o0Header = oSelf.fo0GetUniqueHeaderForName(sName, o0AdditionalHeaders);
+    fAssertType("sbName", sbName, bytes);
+    fAssertType("sbValue", sbValue, bytes);
+    fAssertType("o0AdditionalHeaders", o0AdditionalHeaders, cHTTPHeaders, None);
+    o0Header = oSelf.fo0GetUniqueHeaderForName(sbName, o0AdditionalHeaders);
     if o0Header is None:
-      fShowDebugOutput("No %s header found." % sName);
+      fShowDebugOutput("No %s header found." % sbName);
       return False;
     oHeader = o0Header;
-    if oHeader.sLowerValue != sValue.lower():
-      fShowDebugOutput("Header value %s != %s" % (repr(oHeader.sLowerValue), repr(sValue.lower())));
+    if oHeader.sbLowerValue != sbValue.lower():
+      fShowDebugOutput("Header value %s != %s" % (repr(oHeader.sbLowerValue), repr(sbValue.lower())));
       return False;
-    fShowDebugOutput("Found %s:%s header." % (oHeader.sName, "\n".join(oHeader.asValueLines)));
+    fShowDebugOutput("Found %s:%s header." % (oHeader.sbName, b"\n".join(oHeader.asbValueLines)));
     return True;
   
   @ShowDebugOutput
-  def fbRemoveHeadersForName(oSelf, sName, s0Value = None):
-    assert isinstance(sName, str), \
-        "sName must be a string, not %s" % repr(sName);
-    assert s0Value is None or isinstance(s0Value, str), \
-        "s0Value must be a string or None, not %s" % repr(s0Value);
-    sLowerName = sName.lower();
-    s0LowerValue = s0Value.lower() if s0Value is not None else None;
+  def fbRemoveHeadersForName(oSelf, sbName, sb0Value = None):
+    fAssertType("sbName", sbName, bytes);
+    fAssertType("sb0Value", sb0Value, bytes, None);
+    sbLowerName = sbName.lower();
+    sb0LowerValue = sb0Value.lower() if sb0Value is not None else None;
     bRemoved = False;
     for oOldHeader in oSelf.__aoHeaders[:]:
-      if oOldHeader.sLowerName == sLowerName:
-        if s0Value is None or oOldHeader.sLowerValue == s0LowerValue:
-          fShowDebugOutput("Removing %s:%s header." % (oOldHeader.sName, "\n".join(oOldHeader.asValueLines)));
+      if oOldHeader.sbLowerName == sbLowerName:
+        if sb0Value is None or oOldHeader.sbLowerValue == sb0LowerValue:
+          fShowDebugOutput("Removing %s:%s header." % (oOldHeader.sbName, b"\n".join(oOldHeader.asbValueLines)));
           oSelf.__aoHeaders.remove(oOldHeader);
           bRemoved = True;
     return bRemoved;
   
   @ShowDebugOutput
-  def fbReplaceHeadersForName(oSelf, sName, sValue):
-    assert isinstance(sName, str), \
-        "sName must be a string, not %s" % repr(sName);
-    assert isinstance(sValue, str), \
-        "sValue must be a string, not %s" % repr(sValue);
-    sLowerName = sName.lower();
-    sLowerValue = sValue.lower();
+  def fbReplaceHeadersForName(oSelf, sbName, sbValue):
+    fAssertType("sbName", sbName, bytes);
+    fAssertType("sbValue", sbValue, bytes);
+    sbLowerName = sbName.lower();
+    sbLowerValue = sbValue.lower();
     oExistingHeader = None;
     for oOldHeader in oSelf.__aoHeaders[:]:
-      if oOldHeader.sLowerName == sLowerName:
+      if oOldHeader.sbLowerName == sbLowerName:
         if oExistingHeader is None:
           oExistingHeader = oOldHeader;
         else:
-          fShowDebugOutput("Removing %s:%s header." % (oOldHeader.sName, "\n".join(oOldHeader.asValueLines)));
+          fShowDebugOutput("Removing %s:%s header." % (oOldHeader.sbName, b"\n".join(oOldHeader.asbValueLines)));
           oSelf.__aoHeaders.remove(oOldHeader);
     if oExistingHeader:
-      bReplaced = oExistingHeader.sLowerValue != sLowerValue;
+      bReplaced = oExistingHeader.sbLowerValue != sbLowerValue;
       if bReplaced:
-        fShowDebugOutput("Replacing %s:%s header value with %s." % (sName, oExistingHeader.sValue, sValue));
-      oExistingHeader.sValue = (" " if sValue[:1] != " " else "") + sValue;
+        fShowDebugOutput("Replacing %s:%s header value with %s." % (sbName, oExistingHeader.sbValue, sbValue));
+      oExistingHeader.sbValue = (b" " if sbValue[:1] != b" " else b"") + sbValue;
     else:
-      fShowDebugOutput("Adding %s:%s header." % (sName, sValue));
-      oSelf.__aoHeaders.append(cHTTPHeader(sName, (" " if sValue[:1] != " " else "") + sValue));
+      fShowDebugOutput("Adding %s:%s header." % (sbName, sbValue));
+      oSelf.__aoHeaders.append(cHTTPHeader(sbName, (b" " if sbValue[:1] != b" " else b"") + sbValue));
       bReplaced = False;
     return bReplaced;
   
-  def fasGetHeaderLines(oSelf):
-    asHeaderLines = [];
+  def fasbGetHeaderLines(oSelf):
+    asbHeaderLines = [];
     for oHeader in oSelf.__aoHeaders:
-      asHeaderLines += oHeader.fasGetHeaderLines();
-    return asHeaderLines;
+      asbHeaderLines += oHeader.fasbGetHeaderLines();
+    return asbHeaderLines;
   
   def fasGetDetails(oSelf):
     return [s for s in [

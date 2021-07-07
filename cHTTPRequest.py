@@ -1,14 +1,11 @@
 import re;
 
 try: # mDebugOutput use is Optional
-  from mDebugOutput import *;
-except: # Do nothing if not available.
-  ShowDebugOutput = lambda fxFunction: fxFunction;
-  fShowDebugOutput = lambda sMessage: None;
-  fEnableDebugOutputForModule = lambda mModule: None;
-  fEnableDebugOutputForClass = lambda cClass: None;
-  fEnableAllDebugOutput = lambda: None;
-  cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
+  from mDebugOutput import ShowDebugOutput, fShowDebugOutput;
+except ModuleNotFoundError as oException:
+  if oException.args[0] != "No module named 'mDebugOutput'":
+    raise;
+  ShowDebugOutput = fShowDebugOutput = lambda x: x; # NOP
 
 from mNotProvided import *;
 
@@ -16,125 +13,130 @@ from .cHTTPHeaders import cHTTPHeaders;
 from .cHTTPResponse import cHTTPResponse;
 from .iHTTPMessage import iHTTPMessage;
 from .cURL import cURL;
-from .fsDecompressData import fsDecompressData;
+from .fsbDecompressData import fsbDecompressData;
 from .mExceptions import *;
 
-gsSupportedCompressionTypes= ", ".join(fsDecompressData.asSupportedCompressionTypes);
-gsUserAgent = "Mozilla/5.0 (compatible)";
+gsbSupportedCompressionTypes= b", ".join(fsbDecompressData.asbSupportedCompressionTypes);
+gsbUserAgent = b"Mozilla/5.0 (compatible)";
 
 class cHTTPRequest(iHTTPMessage):
-  ddDefaultHeader_sValue_by_sName_by_sHTTPVersion = {
-    "HTTP/1.0": {
-      "Accept": "*/*",
-      "Accept-Encoding": gsSupportedCompressionTypes,
-      "Connection": "Close",
-      "User-Agent": gsUserAgent,
+  ddDefaultHeader_sbValue_by_sbName_by_sbHTTPVersion = {
+    b"HTTP/1.0": {
+      b"Accept": b"*/*",
+      b"Accept-Encoding": gsbSupportedCompressionTypes,
+      b"Connection": b"Close",
+      b"User-Agent": gsbUserAgent,
     },
-    "HTTP/1.1": {
-      "Accept": "*/*",
-      "Accept-Encoding": gsSupportedCompressionTypes,
-      "Cache-Control": "No-Cache, Must-Revalidate",
-      "Connection": "Keep-Alive",
-      "User-Agent": gsUserAgent,
+    b"HTTP/1.1": {
+      b"Accept": b"*/*",
+      b"Accept-Encoding": gsbSupportedCompressionTypes,
+      b"Cache-Control": b"No-Cache, Must-Revalidate",
+      b"Connection": b"Keep-Alive",
+      b"User-Agent": gsbUserAgent,
     },
   };
   
   @staticmethod
   @ShowDebugOutput
-  def fdxParseStatusLine(sStatusLine):
-    asComponents = sStatusLine.split(" ", 2);
-    if len(asComponents) != 3:
-      raise cHTTPInvalidMessageException("The remote send an invalid status line.", sStatusLine);
-    sMethod, sURL, sVersion = asComponents;
-    if sVersion not in ["HTTP/1.0", "HTTP/1.1"]:
-      raise cHTTPInvalidMessageException("The remote send an invalid HTTP version in the status line.", sVersion);
+  def fdxParseStatusLine(sbStatusLine):
+    asbComponents = sbStatusLine.split(b" ", 2);
+    if len(asbComponents) != 3:
+      raise cHTTPInvalidMessageException("The remote send an invalid status line.", {"sbStatusLine": sbStatusLine});
+    sbMethod, sbURL, sbVersion = asbComponents;
+    if sbVersion not in [b"HTTP/1.0", b"HTTP/1.1"]:
+      raise cHTTPInvalidMessageException("The remote send an invalid HTTP version in the status line.", {"sbVersion": sbVersion});
     # Return value is a dict with elements that take the same name as their corresponding constructor arguments.
-    return {"szMethod": sMethod, "sURL": sURL, "szVersion": sVersion};
+    return {"sbzMethod": sbMethod, "sbURL": sbURL, "sbzVersion": sbVersion};
   
   @ShowDebugOutput
   def __init__(oSelf,
-    sURL,
-    szMethod = zNotProvided,
-    szVersion = zNotProvided,
+    sbURL,
+    sbzMethod = zNotProvided,
+    sbzVersion = zNotProvided,
     o0zHeaders = zNotProvided,
-    s0Body = None,
+    sb0Body = None,
     s0Data = None,
-    a0sBodyChunks = None,
+    a0sbBodyChunks = None,
     o0AdditionalHeaders = None,
     bAutomaticallyAddContentLengthHeader = False
   ):
-    oSelf.__sURL = sURL;
-    oSelf.__sMethod = fxGetFirstProvidedValue(szMethod, "POST" if (s0Body or s0Data or a0sBodyChunks) else "GET");
+    fAssertType("sbURL", sbURL, bytes);
+    fAssertType("sbzMethod", sbzMethod, bytes, zNotProvided);
+    fAssertType("sbzVersion", sbzVersion, bytes, zNotProvided);
+    fAssertType("o0zHeaders", o0zHeaders, cHTTPHeaders, None, zNotProvided);
+    fAssertType("sb0Body", sb0Body, bytes, None);
+    fAssertType("s0Data", s0Data, str, None);
+    fAssertType("a0sbBodyChunks", a0sbBodyChunks, [bytes], None);
+    fAssertType("o0AdditionalHeaders", o0AdditionalHeaders, cHTTPHeaders, None);
+    oSelf.__sbURL = sbURL;
+    oSelf.__sbMethod = fxGetFirstProvidedValue(sbzMethod, b"POST" if (sb0Body or s0Data or a0sbBodyChunks) else b"GET");
     iHTTPMessage.__init__(oSelf,
-      szVersion,
+      sbzVersion,
       o0zHeaders,
-      s0Body,
+      sb0Body,
       s0Data,
-      a0sBodyChunks,
+      a0sbBodyChunks,
       o0AdditionalHeaders,
       bAutomaticallyAddContentLengthHeader
     );
   
   @property
-  def sURL(oSelf):
-    return oSelf.__sURL;
-  @sURL.setter
-  def sURL(oSelf, sURL):
-    oSelf.__sURL = sURL;
+  def sbURL(oSelf):
+    return oSelf.__sbURL;
+  @sbURL.setter
+  def sbURL(oSelf, sbURL):
+    fAssertType("sbURL", sbURL, bytes);
+    oSelf.__sbURL = sbURL;
   @property
-  def sMethod(oSelf):
-    return oSelf.__sMethod;
-  @sMethod.setter
-  def sMethod(oSelf, sMethod):
-    assert isinstance(sMethod, str) and re.match("^[A-Z]+$", sMethod), \
-        "The reason phrase must be a 'str' with one or more uppercase letters, not %s" % repr(sReasonPhrase);
-    oSelf.__sMethod = sMethod;
+  def sbMethod(oSelf):
+    return oSelf.__sbMethod;
+  @sbMethod.setter
+  def sbMethod(oSelf, sbMethod):
+    fAssertType("sbMethod", sbMethod, bytes);
+    assert re.match("^[A-Z]+$", sbMethod), \
+        "'sbMethod' must have one or more uppercase letters, not %s:%s" % (type(sbMethod), repr(sbMethod));
+    oSelf.__sbMethod = sbMethod;
   
   @ShowDebugOutput
   def foClone(oSelf):
     if oSelf.bChunked:
-      return cHTTPRequest(oSelf.sURL, oSelf.sMethod, oSelf.sVersion, oSelf.oHeaders.foClone(), a0sBodyChunks = oSelf.a0sBodyChunks);
-    return cHTTPRequest(oSelf.sURL, oSelf.sMethod, oSelf.sVersion, oSelf.oHeaders.foClone(), s0Body = oSelf.s0Body);
+      return cHTTPRequest(oSelf.sbURL, oSelf.sbMethod, oSelf.sbVersion, oSelf.oHeaders.foClone(), a0sbBodyChunks = oSelf.a0sbBodyChunks);
+    return cHTTPRequest(oSelf.sbURL, oSelf.sbMethod, oSelf.sbVersion, oSelf.oHeaders.foClone(), sb0Body = oSelf.sb0Body);
   
-  def fsGetStatusLine(oSelf):
-    return "%s %s %s" % (oSelf.sMethod, oSelf.sURL, oSelf.sVersion);
+  def fsbGetStatusLine(oSelf):
+    return b"%s %s %s" % (oSelf.sbMethod, oSelf.sbURL, oSelf.sbVersion);
   
   @ShowDebugOutput
-  def foCreateReponse(oSelf,
-    szVersion = zNotProvided,
+  def foCreateResponse(oSelf,
+    sbzVersion = zNotProvided,
     uzStatusCode = zNotProvided,
-    szReasonPhrase = zNotProvided,
+    sbzReasonPhrase = zNotProvided,
     o0zHeaders = zNotProvided,
-    s0Body = None,
+    sb0Body = None,
     s0Data = None,
-    a0sBodyChunks = None,
-    s0CharSet = None,
+    a0sbBodyChunks = None,
+    sb0Charset = None,
     o0AdditionalHeaders = None,
-    s0MediaType = None,
+    sb0MediaType = None,
     bAutomaticallyAddContentLengthHeader = False
   ):
-    sVersion = fxGetFirstProvidedValue(szVersion, oSelf.sVersion);
     oResponse = cHTTPResponse(
-      szVersion = sVersion,
+      sbzVersion = fxGetFirstProvidedValue(sbzVersion, oSelf.sbVersion),
       uzStatusCode = uzStatusCode,
-      szReasonPhrase = szReasonPhrase,
+      sbzReasonPhrase = sbzReasonPhrase,
       o0zHeaders = o0zHeaders,
-      s0Body = s0Body,
+      sb0Body = sb0Body,
       s0Data = s0Data,
-      a0sBodyChunks = a0sBodyChunks,
+      a0sbBodyChunks = a0sbBodyChunks,
       o0AdditionalHeaders = o0AdditionalHeaders,
       bAutomaticallyAddContentLengthHeader = bAutomaticallyAddContentLengthHeader,
     );
-    if s0MediaType or s0Body or s0Data or a0sBodyChunks:
-      assert s0MediaType is None or isinstance(s0MediaType, (str, unicode)), \
-          "s0MediaType must be a string or None, not %s" % repr(s0MediaType);
-      oResponse.s0MediaType = str(s0MediaType or "application/octet-stream");
-      if s0CharSet:
-        assert isinstance(s0CharSet, (str, unicode)), \
-            "s0CharSet must be a string or None, not %s" % repr(s0CharSet);
-        oResponse.s0CharSet = str(s0CharSet);
+    if sb0MediaType or sb0Body or s0Data or a0sbBodyChunks:
+      oResponse.sb0MediaType = sb0MediaType if sb0MediaType is not None else b"application/octet-stream";
+      if sb0Charset is not None:
+        oResponse.sb0Charset = sb0Charset;
     else:
-      assert s0CharSet is None, \
-          "s0CharSet (%s) cannot be defined is s0MediaType is None!" % repr(s0CharSet);
+      assert sb0Charset is None, \
+          "sb0Charset (%s) cannot be defined is sb0MediaType is None!" % repr(sb0Charset);
     return oResponse;
   
