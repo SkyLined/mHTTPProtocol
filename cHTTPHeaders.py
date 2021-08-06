@@ -83,7 +83,7 @@ class cHTTPHeaders(object):
   
   def foAddHeaderForNameAndValue(oSelf, sbName, sbValue):
     fShowDebugOutput("Adding %s:%s header." % (sbName, sbValue));
-    oSelf.__aoHeaders.append(cHTTPHeader(sbName, (b" " if sbValue[:1] != b" " else b"") + sbValue));
+    oSelf.__aoHeaders.append(cHTTPHeader(sbName, sbValue));
   
   @ShowDebugOutput
   def fbHasValueForName(oSelf, sbName, sb0Value = None):
@@ -152,10 +152,10 @@ class cHTTPHeaders(object):
       bReplaced = oExistingHeader.sbLowerValue != sbLowerValue;
       if bReplaced:
         fShowDebugOutput("Replacing %s:%s header value with %s." % (sbName, oExistingHeader.sbValue, sbValue));
-      oExistingHeader.sbValue = (b" " if sbValue[:1] != b" " else b"") + sbValue;
+      oExistingHeader.sbValue = sbValue;
     else:
       fShowDebugOutput("Adding %s:%s header." % (sbName, sbValue));
-      oSelf.__aoHeaders.append(cHTTPHeader(sbName, (b" " if sbValue[:1] != b" " else b"") + sbValue));
+      oSelf.__aoHeaders.append(cHTTPHeader(sbName, sbValue));
       bReplaced = False;
     return bReplaced;
   
