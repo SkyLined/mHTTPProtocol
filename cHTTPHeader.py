@@ -76,16 +76,27 @@ class cHTTPHeader(object):
   def foClone(oSelf):
     return oSelf.__class__(oSelf.__sbName, *oSelf.__asbValueLines);
   
+  def fGet_dsbValue_by_sbName(oSelf):
+    # Look through the named values after the first ';' from last to first.
+    # Return as soon as one is seen; this will return the last value in the header.
+    dsbValue_by_sbName = {};
+    for sbNameValuePair in oSelf.sbLowerValue.split(b";")[1:]:
+      tsbNameValuePair = sbNameValuePair.split(b"=", 1);
+      if len(tsbNameValuePair) == 2:
+        (sbName, sbValue) = tsbNameValuePair;
+        dsbValue_by_sbName[sbName.strip()] = sbValue.strip();
+      else:
+        (sbName,) = tsbNameValuePair;
+        dsbValue_by_sbName[sbName.strip()] = "";
+    return dsbValue_by_sbName;
+  
   def fsb0GetNamedValue(oSelf, sbValueName):
     # Look through the named values after the first ';' from last to first.
     # Return as soon as one is seen; this will return the last value in the header.
-    sbLowerValueName = sbValueName.lower();
-    for sbNameValuePair in reversed(oSelf.sbLowerValue.split(b";")[1:]):
-      tsbNameValuePair = sbNameValuePair.split(b"=", 1);
-      if len(tsbNameValuePair) == 2:
-        sbName, sbValue = tsbNameValuePair;
-        if sbName.strip().lower() == sbLowerValueName:
-          return sbValue;
+    sbStrippedLowerValueName = sbValueName.strip().lower();
+    for (sbName, sbValue) in dsbValue_by_sbName.items():
+      if sbName.lower() == sbStrippedLowerValueName:
+        return sbValue;
     return None;
   
   def fasbGetHeaderLines(oSelf):
