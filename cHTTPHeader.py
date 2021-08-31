@@ -94,7 +94,7 @@ class cHTTPHeader(object):
     # Look through the named values after the first ';' from last to first.
     # Return as soon as one is seen; this will return the last value in the header.
     sbStrippedLowerValueName = sbValueName.strip().lower();
-    for (sbName, sbValue) in dsbValue_by_sbName.items():
+    for (sbName, sbValue) in oSelf.fGet_dsbValue_by_sbName().items():
       if sbName.lower() == sbStrippedLowerValueName:
         return sbValue;
     return None;
