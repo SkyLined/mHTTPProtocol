@@ -357,6 +357,9 @@ class cURL(object):
   @property
   def sbBase(oSelf):
     return b"%s://%s" % (oSelf.__sbProtocol, oSelf.sbHostnameAndOptionalPort);
+  @property
+  def sbOrigin(oSelf):
+    return b"%s://%s" % (oSelf.__sbProtocol, oSelf.sbAddress);
   
   @property
   def sbRelative(oSelf):
