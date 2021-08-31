@@ -346,7 +346,7 @@ class cURL(object):
     return b"%s:%d" % (oSelf.__sbHostname, oSelf.uPortNumber);
   
   @property
-  def sbHostnameAndPort(oSelf):
+  def sbHostnameAndOptionalPort(oSelf):
     bNonDefaultPortNumber = oSelf.__u0PortNumber not in [None, gdtxDefaultPortAndSecure_by_sbProtocol[oSelf.__sbProtocol][0]];
     return oSelf.__sbHostname + (b":%d" % oSelf.__u0PortNumber if bNonDefaultPortNumber else b"");
   
@@ -356,7 +356,7 @@ class cURL(object):
   
   @property
   def sbBase(oSelf):
-    return b"%s://%s" % (oSelf.__sbProtocol, oSelf.sbHostnameAndPort);
+    return b"%s://%s" % (oSelf.__sbProtocol, oSelf.sbHostnameAndOptionalPort);
   
   @property
   def sbRelative(oSelf):
