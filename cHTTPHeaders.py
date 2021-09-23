@@ -135,7 +135,7 @@ class cHTTPHeaders(object):
     return bRemoved;
   
   @ShowDebugOutput
-  def fbReplaceHeadersForName(oSelf, sbName, sbValue):
+  def fbReplaceHeadersForNameAndValue(oSelf, sbName, sbValue):
     fAssertType("sbName", sbName, bytes);
     fAssertType("sbValue", sbValue, bytes);
     sbLowerName = sbName.lower();

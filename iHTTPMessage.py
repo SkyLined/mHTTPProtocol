@@ -138,7 +138,7 @@ class iHTTPMessage(object):
         assert b"\r" not in sb0Boundary and b"\n" not in sb0Boundary and sb0Boundary.strip(), \
             "s0Boundary must be None or a string that does contins at least one non-whitespace character and does not contain '\\r' or '\\n'";
         sbContentTypeHeaderValue += b"; boundary=" + sb0Boundary;
-      oSelf.oHeaders.fbReplaceHeadersForName(b"Content-Type", sbContentTypeHeaderValue);
+      oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Type", sbContentTypeHeaderValue);
     if oSelf.o0AdditionalHeaders:
       oSelf.o0AdditionalHeaders.fbRemoveHeadersForName(b"Content-Type");
   
@@ -323,11 +323,11 @@ class iHTTPMessage(object):
     if oSelf.sbVersion.upper() != b"HTTP/1.1":
       bCloseConnectionInsteadOfUsingContentLength = True;
     if bCloseConnectionInsteadOfUsingContentLength:
-      oSelf.oHeaders.fbReplaceHeadersForName(b"Connection", b"Close");
+      oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Connection", b"Close");
       oSelf.oHeaders.fbRemoveHeadersForName(b"Content-Length");
     elif sb0Body is not None:
       # Add a 'Content-Length' header if sb0Body is not None;
-      oSelf.oHeaders.fbReplaceHeadersForName(b"Content-Length", b"%d" % len(sb0Body));
+      oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Length", b"%d" % len(sb0Body));
     oSelf.__sb0Body = sb0Body;
     oSelf.__a0sbBodyChunks = None;
   
@@ -344,7 +344,7 @@ class iHTTPMessage(object):
       assert sbBodyChunk, \
           "Cannot add empty body chunks";
     oSelf.oHeaders.fbRemoveHeadersForName(b"Content-Length");
-    oSelf.oHeaders.fbReplaceHeadersForName(b"Transfer-Encoding", b"Chunked");
+    oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Transfer-Encoding", b"Chunked");
     oSelf.__sb0Body = None;
     oSelf.__a0sbBodyChunks = asbBodyChunks[:];
   
@@ -438,7 +438,7 @@ class iHTTPMessage(object):
   @ShowDebugOutput
   def fSetBasicAuthorization(oSelf, sbUserName, sbPassword):
     sbBase64EncodedUserNameColonPassword = base64.b64encode("%s:%s" % (sbUserName, sbPassword));
-    oSelf.oHeaders.fbReplaceHeadersForName(b"Authorization", b"basic %s" % sbBase64EncodedUserNameColonPassword);
+    oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Authorization", b"basic %s" % sbBase64EncodedUserNameColonPassword);
   
   def fsbSerialize(oSelf):
     return b"\r\n".join([

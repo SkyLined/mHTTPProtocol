@@ -77,27 +77,34 @@ class cHTTPHeader(object):
     return oSelf.__class__(oSelf.__sbName, *oSelf.__asbValueLines);
   
   def fGet_dsbValue_by_sbName(oSelf):
-    # Look through the named values after the first ';' from last to first.
-    # Return as soon as one is seen; this will return the last value in the header.
-    dsbValue_by_sbName = {};
-    for sbNameValuePair in oSelf.sbLowerValue.split(b";")[1:]:
-      tsbNameValuePair = sbNameValuePair.split(b"=", 1);
-      if len(tsbNameValuePair) == 2:
-        (sbName, sbValue) = tsbNameValuePair;
-        dsbValue_by_sbName[sbName.strip()] = sbValue.strip();
+    # Get the list of name-value pairs and convert them into a dictionary.
+    return dict(oSelf.fGet_atsbName_and_sbValue());
+  
+  def fGet_atsbName_and_sbValue(oSelf):
+    # Parse the value as a ';' separated list of name=value pairs and return
+    # a list with (name, value) tuples.
+    atsbName_and_sbValue = [];
+    for sbNameAndValue in oSelf.sbValue.split(b";"):
+      tsbValue_and_sbName = sbNameAndValue.split(b"=", 1);
+      if len(tsbValue_and_sbName) == 2:
+        (sbName, sbValue) = tsbValue_and_sbName;
+        atsbName_and_sbValue.append((sbName.strip(), sbValue.strip()));
       else:
-        (sbName,) = tsbNameValuePair;
-        dsbValue_by_sbName[sbName.strip()] = "";
-    return dsbValue_by_sbName;
+        (sbName,) = tsbValue_and_sbName;
+        atsbName_and_sbValue.append((sbName.strip(), b""));
+    return atsbName_and_sbValue;
   
   def fsb0GetNamedValue(oSelf, sbValueName):
-    # Look through the named values after the first ';' from last to first.
-    # Return as soon as one is seen; this will return the last value in the header.
+    # Parse the value as a ';' separated list of name=value pairs, find the
+    # named values in this list that matches the given name and return the
+    # corresponding value for the last one found. Returns "" if this pair has
+    # no value, and None if there is no such pair.
     sbStrippedLowerValueName = sbValueName.strip().lower();
-    for (sbName, sbValue) in oSelf.fGet_dsbValue_by_sbName().items():
+    sb0Value = None; # Remains None of no matching name value pair is found.
+    for (sbName, sbValue) in oSelf.fGet_atsbName_and_sbValue():
       if sbName.lower() == sbStrippedLowerValueName:
-        return sbValue;
-    return None;
+        sb0Value = sbValue; # return "" if it has no value.
+    return sb0Value;
   
   def fasbGetHeaderLines(oSelf):
     asbHeaderLines = [b"%s:%s" % (oSelf.__sbName, oSelf.__asbValueLines[0])];
