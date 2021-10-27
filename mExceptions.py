@@ -31,3 +31,10 @@ class cInvalidURLException(cHTTPException):
   # Indicates that data does not contain a valid HTTP URL.
   pass;
 
+acExceptions = [
+  cHTTPException,
+  cHTTPInvalidMessageException,
+  cHTTPInvalidEncodedDataException,
+  cHTTPUnhandledCharsetException,
+  cInvalidURLException,
+];

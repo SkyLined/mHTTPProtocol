@@ -387,3 +387,6 @@ class cURL(object):
   
   def fsToString(oSelf):
     return "%s{%s}" % (oSelf.__class__.__name__, str(oSelf.sbAbsolute, 'ascii', 'strict'));
+
+for cException in acExceptions:
+  setattr(cURL, cException.__name__, cException);
