@@ -320,13 +320,13 @@ class cURL(object):
         if d0sQueryValue_by_sbName is not None else None;
   
   def fs0GetQueryValue(oSelf, sName):
-    dsQueryValue_by_sbName = oSelf.fdsbGetQueryDict();
-    return dsQueryValue_by_sbName.get(sName);
+    dsQueryValue_by_sName = oSelf.fdsbGetQueryDict();
+    return dsQueryValue_by_sName.get(sName);
   
   def fSetQueryValue(oSelf, sName, sValue):
-    dsQueryValue_by_sbName = oSelf.fdsbGetQueryDict();
-    dsQueryValue_by_sbName[sName] = sValue;
-    oSelf.fSetQueryDict(dsQueryValue_by_sbName);
+    dsQueryValue_by_sName = oSelf.fdsbGetQueryDict();
+    dsQueryValue_by_sName[sName] = sValue;
+    oSelf.fSetQueryDict(dsQueryValue_by_sName);
   
   ### Fragment #################################################################
   @property
