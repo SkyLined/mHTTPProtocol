@@ -1,10 +1,10 @@
 {
   "a0sDebugAdditionalProductNames": [
-    "mFileSystemItem",
+    "mConsole",
     "mDebugOutput",
+    "mFileSystemItem",
     "mNotProvided",
-    "mWindowsSDK",
-    "mConsole"
+    "mWindowsSDK"
   ],
   "asProductTypes": [
     "Python module"
@@ -16,7 +16,7 @@
     "sbRepositoryName": "mHTTPProtocol",
     "sbUserName": "SkyLined"
   },
-  "oProductVersion": "2021-08-31 18:13",
+  "oProductVersion": "2021-10-29 09:07",
   "s0PythonModuleName": "mHTTPProtocol",
   "sProductAuthor": "SkyLined",
   "sProductName": "mHTTPProtocol",
