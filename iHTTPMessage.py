@@ -256,6 +256,8 @@ class iHTTPMessage(object):
   
   @ShowDebugOutput
   def fSetData(oSelf, sData, bCloseConnectionInsteadOfUsingContentLength = False):
+    # Convert Unicode string to bytes using the "charset" defined in the headers.
+    # Then apply compression to the result and set it as the body of the message.
     fAssertType("sData", sData, str);
     sb0Charset = oSelf.sb0Charset;
     if sb0Charset is None:
@@ -376,8 +378,8 @@ class iHTTPMessage(object):
     sb0MediaType = oSelf.sb0MediaType;
     if sb0MediaType is None or sb0MediaType.lower() != b"application/x-www-form-urlencoded":
       return None;
-    sb0Data = oSelf.sb0Data;
-    return fdsURLDecodedNameValuePairsFromString(sb0Data) if sb0Data else {};
+    s0Data = oSelf.s0Data;
+    return fdsURLDecodedNameValuePairsFromString(s0Data) if s0Data else {};
   
   @ShowDebugOutput
   def fs0GetFormValue(oSelf, sName):
@@ -401,7 +403,7 @@ class iHTTPMessage(object):
     # and update the optionally compressed body to match.
     sLowerStrippedName = sName.strip().lower();
     d0Form_sValue_by_sName = oSelf.d0Form_sValue_by_sName;
-    assert d0Form_sValue_by_sName, \
+    assert d0Form_sValue_by_sName is not None, \
         "HTTP Message does not contain URL encoded form data.";
     dForm_sValue_by_sName = d0Form_sValue_by_sName;
     for sOtherName in dForm_sValue_by_sName.keys():
@@ -409,7 +411,7 @@ class iHTTPMessage(object):
         del dForm_sValue_by_sName[sOtherName];
     if s0Value is not None:
       dForm_sValue_by_sName[sName] = s0Value;
-    oSelf.fSetData(fsbURLEncodedNameValuePairsToBytesString(dForm_sValue_by_sName));
+    oSelf.fApplyCompressionAndSetBody(fsbURLEncodedNameValuePairsToBytesString(dForm_sValue_by_sName));
   
   @ShowDebugOutput
   def fRemoveFormValue(oSelf, sName):
