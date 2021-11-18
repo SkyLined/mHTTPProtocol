@@ -15,6 +15,7 @@ lzma
 math
 msvcrt
 opcode
+pathlib
 platform
 posixpath
 shutil
@@ -25,7 +26,6 @@ threading
 token
 tokenize
 traceback
-typing
 urllib
 warnings
 zipfile
