@@ -30,7 +30,6 @@ gsbIPv6WordRegExp      = rb"[0-9a-fA-F]{1,4}";
 gsbIPv6PreWordRegExp   = rb"(?:" + gsbIPv6WordRegExp + rb"\:" rb")";
 gsbIPv6PostWordRegExp   = rb"(?:" rb"\:" + gsbIPv6WordRegExp + rb")";
 gsbIPv6AddressRegExp = (
-  rb"\[" # IPv6 addresses are enclosed in "[" and "]" in URLs to avoid cofusion between "host:port" separator and "Word:word" separator
   rb"(?:" 
     + gsbIPv6WordRegExp               + gsbIPv6PostWordRegExp + rb"{7}"      # A:B:C:D:E:F:G:H
   rb"|"
@@ -52,12 +51,14 @@ gsbIPv6AddressRegExp = (
   rb"|"
     + gsbIPv6PreWordRegExp + rb"{0,7}" rb"\:"                                # A:B:C:D:E:F:G:: ... A::
   rb"|" # ----------------------------
-    rb"[Ff][Ee][89ab][0-9a-fA-F]" rb"\:"                          # (FE80-FEBF) ":" ... "%" local adapter
+    rb"[Ff][Ee][89AaBb][0-9a-fA-F]" rb"\:"                          # (FE80-FEBF) ":" ... "%" local adapter
     # same as above, only we have a static first word, so "::..." options do not exist and repeat counts are different
     rb"(?:"
       + gsbIPv6WordRegExp               + gsbIPv6PostWordRegExp + rb"{6}"    # FExx:B:C:D:E:F:G:H
     rb"|"
-      rb"\:"                            + gsbIPv6PostWordRegExp + rb"{0,6}"  # FExx::C:D:E:F:G:H ... FExx::H, FExx::
+                                        + gsbIPv6PostWordRegExp + rb"{1,6}"  # FExx::C:D:E:F:G:H ... FExx::H
+    rb"|"
+      rb"\:"                                                                 # FExx::
     rb"|"
       + gsbIPv6PreWordRegExp + rb"{1}"  + gsbIPv6PostWordRegExp + rb"{1,5}"  # FExx:B::D:E:F:G:H ... FExx:B::H
     rb"|"
@@ -81,7 +82,7 @@ gsbIPv6AddressRegExp = (
       rb"64\:[Ff]{2}9[Bb]\:\:"          #
     rb")"                               #
     + gsbIPv4AddressRegExp +            #
-  rb")" rb"\]"
+  rb")"
 );
 gsbDNSNameRegExp = (
   rb"[A-Za-z0-9]"            #     first char of hostname or lowest level domain name
@@ -105,32 +106,35 @@ gsbDNSNameRegExp = (
 
 gsbProtocolRegExp = rb"|".join([re.escape(sbProtocol) for sbProtocol in gdtxDefaultPortAndSecure_by_sbProtocol.keys()]);
 gsbHostnameRegExp = rb"|".join([gsbIPv4AddressRegExp, gsbIPv6AddressRegExp, gsbDNSNameRegExp]);
+# IPv6 addresses are enclosed in "[" and "]" in URLs to avoid cofusion with "host:port" separator
+gsbHostnameInURLRegExp = rb"|".join([gsbIPv4AddressRegExp, rb"\[" + gsbIPv6AddressRegExp + rb"\]", gsbDNSNameRegExp]);
 gsbPathRegExp     = rb"[^#?]*";
 gsbQueryRegExp    = rb"[^#]*";
 gsbFragmentRegExp = rb".*";
 
-grbProtocol       = re.compile(rb"^" + gsbProtocolRegExp + rb"$", re.I);
-grbHostname       = re.compile(rb"^" + gsbHostnameRegExp + rb"$", re.I);
-grbPath           = re.compile(rb"^\/?" + gsbPathRegExp + rb"$", re.I);
-grbQuery          = re.compile(rb"^\??" + gsbQueryRegExp + rb"$", re.I);
-grbFragment       = re.compile(rb"^#?" + gsbFragmentRegExp + rb"$", re.I);
+grbProtocol       = re.compile(rb"\A" + gsbProtocolRegExp + rb"\Z", re.I);
+grbHostname       = re.compile(rb"\A" + gsbHostnameRegExp + rb"\Z", re.I);
+grbIPv6Hostname   = re.compile(rb"\A" + gsbIPv6AddressRegExp + rb"\Z", re.I);
+grbPath           = re.compile(rb"\A\/?" + gsbPathRegExp + rb"\Z", re.I);
+grbQuery          = re.compile(rb"\A\??" + gsbQueryRegExp + rb"\Z", re.I);
+grbFragment       = re.compile(rb"\A#?" + gsbFragmentRegExp + rb"\Z", re.I);
 grbURL = re.compile(
-  rb"^"                                     # {
+  rb"\A"                                     # {
   rb"(" + gsbProtocolRegExp + rb")://"      #   (protocol) "://"
-  rb"(" + gsbHostnameRegExp + rb")"         #   (hostname)
+  rb"(" + gsbHostnameInURLRegExp + rb")"    #   (hostname)
   rb"(?:" rb"\:(\d+)" rb")?"                #   ":" (port)
   rb"(\/" + gsbPathRegExp + rb")?"          #   optional { ("/" path) }
   rb"(?:\?(" + gsbQueryRegExp + rb"))?"     #   optional { "?" (query) }
   rb"(?:\#(" + gsbFragmentRegExp + rb"))?"  #   optional { "#" (fragement) }
-  rb"$",                                    # }
+  rb"\Z",                                    # }
   re.I
 );
 grbRelativeURL = re.compile(
-  rb"^"                                     # {
+  rb"\A"                                     # {
   rb"(" + gsbPathRegExp + rb")?"            #   optional { (path) }
   rb"(?:\?(" + gsbQueryRegExp + rb"))?"     #   optional { "?" (query) }
   rb"(?:\#(" + gsbFragmentRegExp + rb"))?"  #   optional { "#" (fragement) }
-  rb"$",                                    # }
+  rb"\Z",                                    # }
   re.I
 );
 
@@ -343,12 +347,17 @@ class cURL(object):
   ### Convenience ##############################################################
   @property
   def sbAddress(oSelf):
-    return b"%s:%d" % (oSelf.__sbHostname, oSelf.uPortNumber);
+    return (b"[%s]:%d" if grbIPv6Hostname.match(oSelf.__sbHostname) else "%s:%d") % \
+        (oSelf.__sbHostname, oSelf.uPortNumber);
   
   @property
   def sbHostnameAndOptionalPort(oSelf):
     bNonDefaultPortNumber = oSelf.__u0PortNumber not in [None, gdtxDefaultPortAndSecure_by_sbProtocol[oSelf.__sbProtocol][0]];
-    return oSelf.__sbHostname + (b":%d" % oSelf.__u0PortNumber if bNonDefaultPortNumber else b"");
+    return (
+      b"[%s]" % oSelf.__sbHostname if grbIPv6Hostname.match(oSelf.__sbHostname) else oSelf.__sbHostname
+    ) + (
+      b":%d" % oSelf.__u0PortNumber if bNonDefaultPortNumber else b""
+    );
   
   @property
   def oBase(oSelf):
