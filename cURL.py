@@ -105,7 +105,7 @@ gsbDNSNameRegExp = (
 );
 
 gsbProtocolRegExp = rb"|".join([re.escape(sbProtocol) for sbProtocol in gdtxDefaultPortAndSecure_by_sbProtocol.keys()]);
-gsbHostnameRegExp = rb"|".join([gsbIPv4AddressRegExp, gsbIPv6AddressRegExp, gsbDNSNameRegExp]);
+gsbHostnameRegExp = rb"|".join([gsbIPv4AddressRegExp, gsbIPv6AddressRegExp, rb"\[" + gsbIPv6AddressRegExp + rb"\]", gsbDNSNameRegExp]);
 # IPv6 addresses are enclosed in "[" and "]" in URLs to avoid cofusion with "host:port" separator
 gsbHostnameInURLRegExp = rb"|".join([gsbIPv4AddressRegExp, rb"\[" + gsbIPv6AddressRegExp + rb"\]", gsbDNSNameRegExp]);
 gsbPathRegExp     = rb"[^#?]*";
@@ -262,7 +262,8 @@ class cURL(object):
     fAssertType("sbHostname", sbHostname, bytes);
     assert grbHostname.match(sbHostname), \
         "sbHostname is not a valid hostname (%s)" % (repr(sbHostname),);
-    oSelf.__sbHostname = sbHostname;
+    # IPv6 hostnames can be wrapped in "[]"; we remove these:
+    oSelf.__sbHostname = sbHostname if sbHostname[0] != "[" else sbHostname[1:-1];
   
   ### Port #####################################################################
   @property
