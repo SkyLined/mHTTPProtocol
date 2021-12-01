@@ -348,7 +348,7 @@ class cURL(object):
   ### Convenience ##############################################################
   @property
   def sbAddress(oSelf):
-    return (b"[%s]:%d" if grbIPv6Hostname.match(oSelf.__sbHostname) else "%s:%d") % \
+    return (b"[%s]:%d" if grbIPv6Hostname.match(oSelf.__sbHostname) else b"%s:%d") % \
         (oSelf.__sbHostname, oSelf.uPortNumber);
   
   @property
