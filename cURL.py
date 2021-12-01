@@ -397,6 +397,18 @@ class cURL(object):
   
   def fsToString(oSelf):
     return "%s{%s}" % (oSelf.__class__.__name__, str(oSelf.sbAbsolute, 'ascii', 'strict'));
-
+  
+  def __repr__(oSelf):
+    return "<%s.%s %s://%s%s%s%s%s>" % (
+      oSelf.__class__.__module__,
+      oSelf.__class__.__name__,
+      repr(oSelf.__sbProtocol),
+      repr(oSelf.__sbHostname),
+      (":%s" % repr(oSelf.__u0PortNumber)) if oSelf.__u0PortNumber is not None else "",
+      repr(oSelf.__sbPath),
+      ("?%s" % repr(oSelf.__sb0Query)) if oSelf.__sb0Query is not None else "",
+      ("#%s" % repr(oSelf.__sb0Fragment)) if oSelf.__sb0Fragment is not None else "",
+    );
+  
 for cException in acExceptions:
   setattr(cURL, cException.__name__, cException);
