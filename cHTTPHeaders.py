@@ -58,14 +58,14 @@ class cHTTPHeaders(object):
   
   def fAddHeader(oSelf, oHeader):
     fAssertType("oHeader", oHeader, cHTTPHeader);
-    fShowDebugOutput("Adding %s:%s header." % (oHeader.sbName, b"\n".join(oHeader.asbValueLines)));
+    fShowDebugOutput("Adding %s:%s header." % (repr(oHeader.sbName), repr(b"\n".join(oHeader.asbValueLines))));
     oSelf.__aoHeaders.append(oHeader);
   
   def fbRemoveHeader(oSelf, oHeader):
     fAssertType("oHeader", oHeader, cHTTPHeader);
     if oHeader not in oSelf.__aoHeaders:
       return False;
-    fShowDebugOutput("Removing %s:%s header." % (oHeader.sbName, "b\n".join(oHeader.asbValueLines)));
+    fShowDebugOutput("Removing %s:%s header." % (repr(oHeader.sbName), repr(b"\n".join(oHeader.asbValueLines))));
     oSelf.__aoHeaders.remove(oHeader);
     return True;
   
@@ -75,14 +75,14 @@ class cHTTPHeaders(object):
     for oOldHeader in oSelf.__aoHeaders[:]:
       if oOldHeader.sbLowerName == oHeader.sbLowerName:
         oSelf.__aoHeaders.remove(oOldHeader);
-        fShowDebugOutput("Removing %s:%s header." % (oOldHeader.sbName, b"\n".join(oOldHeader.asbValueLines)));
+        fShowDebugOutput("Removing %s:%s header." % (repr(oOldHeader.sbName), repr(b"\n".join(oOldHeader.asbValueLines))));
         bReplaced = True;
-    fShowDebugOutput("Adding %s:%s header." % (oHeader.sbName, b"\n".join(oHeader.asbValueLines)));
+    fShowDebugOutput("Adding %s:%s header." % (repr(oHeader.sbName), repr(b"\n".join(oHeader.asbValueLines))));
     oSelf.__aoHeaders.append(oHeader);
     return bReplaced;
   
   def foAddHeaderForNameAndValue(oSelf, sbName, sbValue):
-    fShowDebugOutput("Adding %s:%s header." % (sbName, sbValue));
+    fShowDebugOutput("Adding %s:%s header." % (repr(sbName), repr(sbValue)));
     oSelf.__aoHeaders.append(cHTTPHeader(sbName, sbValue));
   
   @ShowDebugOutput
@@ -95,7 +95,7 @@ class cHTTPHeaders(object):
     for oHeader in oSelf.__aoHeaders:
       if oHeader.sbLowerName == sbLowerName:
         if sb0Value is None or oHeader.sbLowerValue == sb0LowerValue:
-          fShowDebugOutput("Found %s:%s header." % (oHeader.sbName, b"\n".join(oHeader.asbValueLines)));
+          fShowDebugOutput("Found %s:%s header." % (repr(oHeader.sbName), repr(b"\n".join(oHeader.asbValueLines))));
           return True;
     return False;
   
@@ -110,13 +110,13 @@ class cHTTPHeaders(object):
     fAssertType("o0AdditionalHeaders", o0AdditionalHeaders, cHTTPHeaders, None);
     o0Header = oSelf.fo0GetUniqueHeaderForName(sbName, o0AdditionalHeaders);
     if o0Header is None:
-      fShowDebugOutput("No %s header found." % sbName);
+      fShowDebugOutput("No %s header found." % repr(sbName));
       return False;
     oHeader = o0Header;
     if oHeader.sbLowerValue != sbValue.lower():
       fShowDebugOutput("Header value %s != %s" % (repr(oHeader.sbLowerValue), repr(sbValue.lower())));
       return False;
-    fShowDebugOutput("Found %s:%s header." % (oHeader.sbName, b"\n".join(oHeader.asbValueLines)));
+    fShowDebugOutput("Found %s:%s header." % (repr(oHeader.sbName), repr(b"\n".join(oHeader.asbValueLines))));
     return True;
   
   @ShowDebugOutput
@@ -129,7 +129,7 @@ class cHTTPHeaders(object):
     for oOldHeader in oSelf.__aoHeaders[:]:
       if oOldHeader.sbLowerName == sbLowerName:
         if sb0Value is None or oOldHeader.sbLowerValue == sb0LowerValue:
-          fShowDebugOutput("Removing %s:%s header." % (oOldHeader.sbName, b"\n".join(oOldHeader.asbValueLines)));
+          fShowDebugOutput("Removing %s:%s header." % (repr(oOldHeader.sbName), repr(b"\n".join(oOldHeader.asbValueLines))));
           oSelf.__aoHeaders.remove(oOldHeader);
           bRemoved = True;
     return bRemoved;
@@ -146,15 +146,15 @@ class cHTTPHeaders(object):
         if oExistingHeader is None:
           oExistingHeader = oOldHeader;
         else:
-          fShowDebugOutput("Removing %s:%s header." % (oOldHeader.sbName, b"\n".join(oOldHeader.asbValueLines)));
+          fShowDebugOutput("Removing %s:%s header." % (repr(oOldHeader.sbName), repr(b"\n".join(oOldHeader.asbValueLines))));
           oSelf.__aoHeaders.remove(oOldHeader);
     if oExistingHeader:
       bReplaced = oExistingHeader.sbLowerValue != sbLowerValue;
       if bReplaced:
-        fShowDebugOutput("Replacing %s:%s header value with %s." % (sbName, oExistingHeader.sbValue, sbValue));
+        fShowDebugOutput("Replacing %s:%s header value with %s." % (repr(sbName), repr(oExistingHeader.sbValue), repr(sbValue)));
       oExistingHeader.sbValue = sbValue;
     else:
-      fShowDebugOutput("Adding %s:%s header." % (sbName, sbValue));
+      fShowDebugOutput("Adding %s:%s header." % (repr(sbName), repr(sbValue)));
       oSelf.__aoHeaders.append(cHTTPHeader(sbName, sbValue));
       bReplaced = False;
     return bReplaced;
