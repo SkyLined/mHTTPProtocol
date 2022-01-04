@@ -276,7 +276,7 @@ class cURL(object):
   def u0PortNumber(oSelf, u0PortNumber = None):
     assert u0PortNumber is None or isinstance(u0PortNumber, int), \
         "u0PortNumber must be None, an int or a long, not %s" % repr(u0PortNumber);
-    oself.__u0PortNumber = u0PortNumber;
+    oSelf.__u0PortNumber = u0PortNumber;
   
   ### Path #####################################################################
   @property
