@@ -86,6 +86,7 @@ class iHTTPMessage(object):
           "Unsupported HTTP version %s" % repr(oSelf.sbVersion);
       oSelf.oHeaders = cHTTPHeaders.foFromDict(dDefaultHeader_sbValue_by_sbName);
     
+    bConnectionCloseHeaderPresent = oSelf.oHeaders.fbHasUniqueValueForName(b"Connection", b"Close");
     o0ContentLengthHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName(b"Content-Length");
     bChunked = oSelf.oHeaders.fbHasUniqueValueForName(b"Transfer-Encoding", b"Chunked");
     if sb0Body is not None:
@@ -95,7 +96,7 @@ class iHTTPMessage(object):
       oSelf.__a0sbBodyChunks = None;
       o0ContentLengthHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName(b"Content-Length");
       if o0ContentLengthHeader is None:
-        assert bAutomaticallyAddContentLengthHeader, \
+        assert bConnectionCloseHeaderPresent or bAutomaticallyAddContentLengthHeader, \
             "Cannot provide sb0Body (%s) without a \"Content-Length\" header or setting bAutomaticallyAddContentLengthHeader!" % repr(sb0Body);
         oSelf.oHeaders.foAddHeaderForNameAndValue(b"Content-Length", b"%d" % len(sb0Body));
       else:
