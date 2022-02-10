@@ -3,7 +3,8 @@ try: # mDebugOutput use is Optional
 except ModuleNotFoundError as oException:
   if oException.args[0] != "No module named 'mDebugOutput'":
     raise;
-  ShowDebugOutput = fShowDebugOutput = lambda x: x; # NOP
+  ShowDebugOutput = lambda fx: fx; # NOP
+  fShowDebugOutput = lambda x, s0 = None: x; # NOP
 
 from mNotProvided import *;
 
@@ -29,21 +30,42 @@ class cHTTPResponse(iHTTPMessage):
   
   @staticmethod
   @ShowDebugOutput
-  def fdxParseStatusLine(sbStatusLine):
+  def fdxParseStatusLine(sbStatusLine, o0Connection = None, bStrictErrorChecking = True):
     asbComponents = sbStatusLine.split(b" ", 2);
-    if len(asbComponents) != 3:
-      raise cHTTPInvalidMessageException("The remote send an invalid status line.", {"sbStatusLine": sbStatusLine});
-    sbVersion, sbStatusCode, sbReasonPhrase = asbComponents;
-    if sbVersion not in [b"HTTP/1.0", b"HTTP/1.1"]:
-      raise cHTTPInvalidMessageException("The remote send an invalid HTTP version in the status line.", {"sbVersion": sbVersion});
+    if not bStrictErrorChecking and len(asbComponents) == 2:
+      asbComponents += [""]; # Accept missing reason phrase.
+    elif len(asbComponents) != 3:
+      raise cHTTPInvalidMessageException(
+        "The remote send an invalid status line.",
+        o0Connection = o0Connection,
+        dxDetails = {"sbStatusLine": sbStatusLine},
+      );
+    (sbVersion, sbStatusCode, sbReasonPhrase) = asbComponents;
     try:
-      if len(sbStatusCode) != 3:
+      if bStrictErrorChecking and len(sbStatusCode) != 3:
         raise ValueError();
       uStatusCode = int(sbStatusCode);
-      if uStatusCode < 100 or uStatusCode > 599:
-        raise ValueError();
     except ValueError:
-      raise cHTTPInvalidMessageException("The remote send an invalid status code in the status line.", {"sbStatusCode": sbStatusCode});
+      uStatusCode = 0;
+    if bStrictErrorChecking:
+      dxDetails = {
+        "sbStatusLine": sbStatusLine,
+        "sbVersion": sbVersion,
+        "uzStatusCode": uStatusCode,
+        "sbReasonPhrase": sbReasonPhrase
+      };  
+      if sbVersion not in [b"HTTP/1.0", b"HTTP/1.1"]:
+        raise cHTTPInvalidMessageException(
+          "The remote send an invalid HTTP version in the status line.",
+          o0Connection = o0Connection,
+          dxDetails = dxDetails,
+        );
+      if uStatusCode < 100 or uStatusCode > 599:
+        raise cHTTPInvalidMessageException(
+          "The remote send an invalid status code in the status line.",
+          o0Connection = o0Connection,
+          dxDetails = dxDetails,
+        );
     # Return value is a dict with elements that take the same name as their corresponding constructor arguments.
     # Return a dictionary that can be used as arguments to __init__
     return {"sbzVersion": sbVersion, "uzStatusCode": uStatusCode, "sbzReasonPhrase": sbReasonPhrase};

@@ -1,11 +1,12 @@
-import re;
+import re, urllib.parse;
 
 try: # mDebugOutput use is Optional
   from mDebugOutput import ShowDebugOutput, fShowDebugOutput;
 except ModuleNotFoundError as oException:
   if oException.args[0] != "No module named 'mDebugOutput'":
     raise;
-  ShowDebugOutput = fShowDebugOutput = lambda x: x; # NOP
+  ShowDebugOutput = lambda fx: fx; # NOP
+  fShowDebugOutput = lambda x, s0 = None: x; # NOP
 
 from mNotProvided import *;
 
@@ -38,13 +39,28 @@ class cHTTPRequest(iHTTPMessage):
   
   @staticmethod
   @ShowDebugOutput
-  def fdxParseStatusLine(sbStatusLine):
+  def fdxParseStatusLine(sbStatusLine, o0Connection = None, bStrictErrorChecking = True):
     asbComponents = sbStatusLine.split(b" ", 2);
     if len(asbComponents) != 3:
-      raise cHTTPInvalidMessageException("The remote send an invalid status line.", {"sbStatusLine": sbStatusLine});
+      raise cHTTPInvalidMessageException(
+        "The remote send an invalid status line.",
+        o0Connection = o0Connection,
+        dxDetails = {"sbStatusLine": sbStatusLine},
+      );
     sbMethod, sbURL, sbVersion = asbComponents;
-    if sbVersion not in [b"HTTP/1.0", b"HTTP/1.1"]:
-      raise cHTTPInvalidMessageException("The remote send an invalid HTTP version in the status line.", {"sbVersion": sbVersion});
+    if bStrictErrorChecking:
+      dxDetails = {
+        "sbStatusLine": sbStatusLine,
+        "sbMethod": sbMethod,
+        "sbURL": sbURL,
+        "sbVersion": sbVersion,
+      };
+      if sbVersion not in [b"HTTP/1.0", b"HTTP/1.1"]:
+        raise cHTTPInvalidMessageException(
+          "The remote send an invalid HTTP version in the status line.",
+          o0Connection = o0Connection,
+          dxDetails = dxDetails,
+        );
     # Return value is a dict with elements that take the same name as their corresponding constructor arguments.
     return {"sbzMethod": sbMethod, "sbURL": sbURL, "sbzVersion": sbVersion};
   
@@ -87,6 +103,15 @@ class cHTTPRequest(iHTTPMessage):
   def sbURL(oSelf, sbURL):
     fAssertType("sbURL", sbURL, bytes);
     oSelf.__sbURL = sbURL;
+  
+  @property
+  def sURLDecoded(oSelf):
+    return urllib.parse.unquote(str(oSelf.__sbURL, "ascii", "strict"));
+  @sURLDecoded.setter
+  def sURLDecoded(oSelf, sURL):
+    fAssertType("sURL", sURL, str);
+    oSelf.__sbURL = bytes(urllib.parse.quote(sURL), "ascii", "strict");
+  
   @property
   def sbMethod(oSelf):
     return oSelf.__sbMethod;

@@ -3,7 +3,8 @@ try: # mDebugOutput use is Optional
 except ModuleNotFoundError as oException:
   if oException.args[0] != "No module named 'mDebugOutput'":
     raise;
-  ShowDebugOutput = fShowDebugOutput = lambda x: x; # NOP
+  ShowDebugOutput = lambda fx: fx; # NOP
+  fShowDebugOutput = lambda x, s0 = None: x; # NOP
 
 from mNotProvided import *;
 
@@ -38,7 +39,7 @@ class cHTTPHeaders(object):
     return [oHeader for oHeader in oSelf.__aoHeaders if oHeader.sbLowerName == sbLowerName];
   
   @ShowDebugOutput
-  def fo0GetUniqueHeaderForName(oSelf, sbName, o0AdditionalHeaders = None):
+  def fo0GetUniqueHeaderForName(oSelf, sbName, o0AdditionalHeaders = None, o0Connection = None):
     # returns the first header with the given name.
     # will throw a cHTTPInvalidMessageException if there are multiple headers
     # with the given name with different values, ignoring case.
@@ -48,11 +49,15 @@ class cHTTPHeaders(object):
     if len(aoHeaders) == 0:
       return None;
     if len(aoHeaders) > 1:
-      uNumberOfUniqueHeaderValues = len(set([oHeader.sbLowerValue for oHeader in aoHeaders]));
-      if uNumberOfUniqueHeaderValues > 1:
+      sbUniqueLowercaseValues = set([oHeader.sbLowerValue for oHeader in aoHeaders]);
+      if len(sbUniqueLowercaseValues) > 1:
         raise cHTTPInvalidMessageException(
           "A valid HTTP message cannot have more than 1 unique value for the %s header" % sbName,
-          {"aoHeaders": aoHeaders},
+          o0Connection = o0Connection,
+          dxDetails = {
+            "sbName": sbName,
+            "sbUniqueLowercaseValues": sbUniqueLowercaseValues,
+          },
         );
     return aoHeaders[0];
   

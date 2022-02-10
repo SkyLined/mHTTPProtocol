@@ -5,7 +5,8 @@ try: # mDebugOutput use is Optional
 except ModuleNotFoundError as oException:
   if oException.args[0] != "No module named 'mDebugOutput'":
     raise;
-  ShowDebugOutput = fShowDebugOutput = lambda x: x; # NOP
+  ShowDebugOutput = lambda fx: fx; # NOP
+  fShowDebugOutput = lambda x, s0 = None: x; # NOP
 
 from mNotProvided import *;
 
@@ -32,25 +33,29 @@ class iHTTPMessage(object):
   
   @classmethod
   @ShowDebugOutput
-  def foParseHeaderLines(cClass, asbHeaderLines):
+  def foParseHeaderLines(cClass, asbHeaderLines, o0Connection = None, bStrictErrorChecking = True):
     oHeaders = cHTTPHeaders();
     oMostRecentHeader = None;
     for sbHeaderLine in asbHeaderLines:
       if sbHeaderLine[0] in b" \t": # header continuation
-        if oMostRecentHeader is None:
+        if oMostRecentHeader is not None:
+          oMostRecentHeader.fAddValueLine(sbHeaderLine);
+        elif bStrictErrorChecking:
           raise cHTTPInvalidMessageException(
             "A header line continuation was sent on the first header line, which is not valid.",
-            {"sbHeaderLine": sbHeaderLine},
+            o0Connection = o0Connection,
+            dxDetails = {"sbHeaderLine": sbHeaderLine},
           );
-        oMostRecentHeader.fAddValueLine(sbHeaderLine);
       else: # header
         tsbHeaderNameAndValue = sbHeaderLine.split(b":", 1);
-        if len(tsbHeaderNameAndValue) != 2:
+        if len(tsbHeaderNameAndValue) == 2:
+          oMostRecentHeader = oHeaders.foAddHeaderForNameAndValue(*tsbHeaderNameAndValue);
+        elif bStrictErrorChecking:
           raise cHTTPInvalidMessageException(
             "A header line did not contain a colon.",
-            {"sbHeaderLine": sbHeaderLine},
+            o0Connection = o0Connection,
+            dxDetails = {"sbHeaderLine": sbHeaderLine},
           );
-        oMostRecentHeader = oHeaders.foAddHeaderForNameAndValue(*tsbHeaderNameAndValue);
     return oHeaders;
   
   @ShowDebugOutput
@@ -174,14 +179,16 @@ class iHTTPMessage(object):
   @property
   @ShowDebugOutput
   def bChunked(oSelf):
-    if oSelf.o0AdditionalHeaders:
-      # The Transfer-Encoding is only valid in the first set of headers and not in any additional headers.
-      aoTransferEncodingHeaders = oSelf.o0AdditionalHeaders.faoGetHeadersForName(b"Transfer-Encoding");
-      if aoTransferEncodingHeaders:
-        raise cHTTPInvalidMessageException(
-          "Additional headers contain Transfer-Encoding headers",
-          {"aoTransferEncodingHeaders": aoTransferEncodingHeaders},
-        );
+# This is a decent sanity check, but we want to be able to work with invalid messages too.
+#    if oSelf.o0AdditionalHeaders:
+#      # The Transfer-Encoding is only valid in the first set of headers and not in any additional headers.
+#      aoTransferEncodingHeaders = oSelf.o0AdditionalHeaders.faoGetHeadersForName(b"Transfer-Encoding");
+#      if aoTransferEncodingHeaders:
+#        raise cHTTPInvalidMessageException(
+#          "Additional headers contain Transfer-Encoding headers",
+#           o0Connection = o0Connection,
+#          dxDetails = {"aoTransferEncodingHeaders": aoTransferEncodingHeaders},
+#        );
     return oSelf.oHeaders.fbHasUniqueValueForName(b"Transfer-Encoding", b"Chunked");
   
   @property
@@ -203,10 +210,12 @@ class iHTTPMessage(object):
     elif oSelf.sbVersion.upper() == b"HTTP/1.1":
       fShowDebugOutput("No 'Connection' header found; defaulting to 'Keep-alive' for %s" % oSelf.sbVersion);
       return False;
-    raise cHTTPInvalidMessageException(
-      "Invalid HTTP version!",
-      {"sbVersion": oSelf.sbVersion},
-    );
+# This is a decent sanity check, but we want to be able to work with invalid messages too.
+#    raise cHTTPInvalidMessageException(
+#      "Invalid HTTP version!",
+#      dxDetails = {"sbVersion": oSelf.sbVersion},
+#    );
+    return True; # Closing the connection is the safest option.
   
   @property
   @ShowDebugOutput
@@ -224,39 +233,43 @@ class iHTTPMessage(object):
   
   @property
   def s0Data(oSelf):
+    return oSelf.fs0GetData();
+  def fs0GetData(oSelf, o0Connection = None):
     # Returns decompressed and decoded body based on the Content-Encoding header.
-    sb0Data = oSelf.sb0DecompressedBody;
-    if sb0Data is None:
+    sb0DecompressedBody = oSelf.sb0DecompressedBody;
+    if sb0DecompressedBody is None:
       return None;
-    sbData = sb0Data; # Never None past this point.
+    sbDecompressedBody = sb0DecompressedBody; # Never None past this point.
     sb0Charset = oSelf.sb0Charset;
     if oSelf.sb0Charset is None:
-      sData = "".join(chr(uByte) for uByte in sbData);
+      sData = "".join(chr(uByte) for uByte in sbDecompressedBody);
     else:
       try:
         sCharset = str(sb0Charset, 'ascii');
       except UnicodeError as oException:
         raise cHTTPUnhandledeCharsetException(
-          "The charset provided in the Content-Type header cannot be handled.",
-          {"sbCharset": sb0Charset, "oHTTPMessage": oSelf},
+          "The charset provided in the Content-Type header is invalid.",
+          o0Connection = o0Connection,
+          dxDetails = {"sbCharset": sb0Charset},
         );
-      
       try:
-        sData = str(sbData, sCharset, "strict");
+        sData = str(sbDecompressedBody, sCharset, "strict");
+      except LookupError as oException:
+        raise cHTTPUnhandledeCharsetException(
+          "The charset provided in the Content-Type header is unknown.",
+          o0Connection = o0Connection,
+          dxDetails = {"sCharset": sCharset},
+        );
       except UnicodeError as oException:
         raise cHTTPInvalidEncodedDataException(
           "The body does not contain valid encoded data.",
-          {"sbCharset": sb0Charset, "sbData": sbData, "oHTTPMessage": oSelf},
-        );
-      except LookupError as oException:
-        raise cHTTPUnhandledeCharsetException(
-          "The charset provided in the Content-Type header cannot be handled.",
-          {"sbCharset": sb0Charset, "oHTTPMessage": oSelf},
+          o0Connection = o0Connection,
+          dxDetails = {"sCharset": sCharset, "sbDecompressedBody": sbDecompressedBody},
         );
     return sData;
   
   @ShowDebugOutput
-  def fSetData(oSelf, sData, bCloseConnectionInsteadOfUsingContentLength = False):
+  def fSetData(oSelf, sData, bCloseConnectionInsteadOfUsingContentLength = False, o0Connection = None):
     # Convert Unicode string to bytes using the "charset" defined in the headers.
     # Then apply compression to the result and set it as the body of the message.
     fAssertType("sData", sData, str);
@@ -264,11 +277,12 @@ class iHTTPMessage(object):
     if sb0Charset is None:
       # Convert string to bytes, assuming string contains only byte values ('\x00'-'\xFF').
       try:
-        sbData = bytes([ord(sChar) for sChar in sData]);
+        sbUncompressedBody = bytes([ord(sChar) for sChar in sData]);
       except ValueError as oException:
         raise cHTTPInvalidEncodedDataException(
           "The data contains non-byte characters.",
-          {"sData": sData},
+          o0Connection = o0Connection,
+          dxDetails = {"sData": sData},
         );
     else:
       # Convert Unicode string to bytes using charset defined in Content-Type header.
@@ -276,18 +290,26 @@ class iHTTPMessage(object):
         sCharset = str(sb0Charset, "ascii");
       except UnicodeError as oException:
         raise cHTTPUnhandledeCharsetException(
-          "The charset provided in the Content-Type header cannot be handled.",
-          {"sbCharset": sb0Charset, "oHTTPMessage": oSelf},
+          "The charset provided in the Content-Type header is invalid.",
+          o0Connection = o0Connection,
+          dxDetails = {"sbCharset": sb0Charset},
         );
       try:
-        sbData = bytes(sData, sCharSet, "strict");
+        sbUncompressedBody = bytes(sData, sCharset, "strict");
+      except LookupError as oException:
+        raise cHTTPUnhandledeCharsetException(
+          "The charset provided in the Content-Type header is unknown.",
+          o0Connection = o0Connection,
+          dxDetails = {"sCharset": sCharset},
+        );
       except UnicodeError as oException:
         raise cHTTPInvalidEncodedDataException(
-          "The data contains non-byte characters.",
-          {"sData": sData},
+          "The data cannot be encoded.",
+          o0Connection = o0Connection,
+          dxDetails = {"sCharset": sCharset, "sData": sData},
         );
     # Sets the (optionally) compressed body of the message.
-    oSelf.fApplyCompressionAndSetBody(sbData, bCloseConnectionInsteadOfUsingContentLength);
+    oSelf.fApplyCompressionAndSetBody(sbUncompressedBody, bCloseConnectionInsteadOfUsingContentLength);
   
   @property
   def sb0DecompressedBody(oSelf):
@@ -437,7 +459,7 @@ class iHTTPMessage(object):
       sbUserName = sbUserNameColonPassword;
       sbPassword = None;
     return (sbUserName, sbPassword);
-
+  
   @ShowDebugOutput
   def fSetBasicAuthorization(oSelf, sbUserName, sbPassword):
     sbBase64EncodedUserNameColonPassword = base64.b64encode("%s:%s" % (sbUserName, sbPassword));

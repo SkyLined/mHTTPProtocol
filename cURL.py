@@ -150,32 +150,67 @@ class cURL(object):
     fAssertType("sbURL", sbURL, bytes);
     oURLMatch = grbURL.match(sbURL);
     if not oURLMatch:
-      raise cInvalidURLException("Invalid URL", {"sbURL": sbURL});
+      raise cHTTPInvalidURLException(
+        "Invalid URL",
+        dxDetails = {"sbURL": sbURL},
+      );
     (sbProtocol, sbHostname, sb0Port, sb0Path, sb0Query, sb0Fragment) = oURLMatch.groups();
-    return cClass(sbProtocol, sbHostname, int(sb0Port) if sb0Port else None, sb0Path, sb0Query, sb0Fragment);
+    return cClass(
+      sbProtocol, sbHostname, int(sb0Port) if sb0Port else None,
+      sb0Path = sb0Path,
+      sb0Query = sb0Query,
+      sb0Fragment = sb0Fragment,
+    );
   
-  def __init__(oSelf, sbProtocol, sbHostname, u0PortNumber = None, sb0Path = None, sb0Query = None, sb0Fragment = None):
+  def __init__(oSelf,
+    sbProtocol, sbHostname, u0PortNumber = None,
+    *,
+    sb0Path = None, s0URLDecodedPath = None,
+    sb0Query = None, s0URLDecodedQuery = None,
+    sb0Fragment = None, s0URLDecodedFragment = None,
+  ):
     fAssertType("sbProtocol", sbProtocol, bytes);
     fAssertType("sbHostname", sbHostname, bytes);
     fAssertType("u0PortNumber", u0PortNumber, int, None);
     fAssertType("sb0Path", sb0Path, bytes, None);
+    fAssertType("s0URLDecodedPath", s0URLDecodedPath, str, None);
     fAssertType("sb0Query", sb0Query, bytes, None);
+    fAssertType("s0URLDecodedQuery", s0URLDecodedQuery, str, None);
     fAssertType("sb0Fragment", sb0Fragment, bytes, None);
+    fAssertType("s0URLDecodedFragment", s0URLDecodedFragment, str, None);
     oSelf.sbProtocol = sbProtocol;
     oSelf.sbHostname = sbHostname;
     assert u0PortNumber is None or isinstance(u0PortNumber, int), \
         "u0PortNumber must be None, an int or a long, not %s" % repr(u0PortNumber);
     oSelf.__u0PortNumber = u0PortNumber;
-    oSelf.sbPath = sb0Path;
-    oSelf.sb0Query = sb0Query;
-    oSelf.sb0Fragment = sb0Fragment;
+    if s0URLDecodedPath is not None:
+      assert sb0Path is None, \
+          "sb0Path and s0URLDecodedPath cannot be provided together (%s and %s)" % (repr(sb0Path), repr(s0URLDecodedPath));
+      oSelf.sURLDecodedPath = s0URLDecodedPath;
+    else:
+      oSelf.sbPath = sb0Path;
+    if s0URLDecodedQuery is not None:
+      assert sb0Query is None, \
+          "sb0Query and s0URLDecodedQuery cannot be provided together (%s and %s)" % (repr(sb0Query), repr(s0URLDecodedQuery));
+      oSelf.s0URLDecodedQuery = s0URLDecodedQuery;
+    else:
+      oSelf.sb0Query = sb0Query;
+    if s0URLDecodedFragment is not None:
+      assert sb0Fragment is None, \
+          "sb0Fragment and s0URLDecodedFragment cannot be provided together (%s and %s)" % (repr(sb0Fragment), repr(s0URLDecodedFragment));
+      oSelf.s0URLDecodedFragment = s0URLDecodedFragment;
+    else:
+      oSelf.sb0Fragment = sb0Fragment;
   
   def foFromRelativeBytesString(oSelf, sbURL, bMustBeRelative = False):
     fAssertType("sbURL", sbURL, bytes);
     oRelativeURLMatch = grbRelativeURL.match(sbURL);
     if not oRelativeURLMatch:
       if bMustBeRelative:
-        raise cInvalidURLException("Invalid relative URL", {"sbURL": sbURL});
+        raise cHTTPInvalidURLException(
+          "Invalid relative URL",
+          dxDetails = {"sbURL": sbURL},
+        );
       return cURL.foFromBytesString(sbURL);
     (sb0Path, sb0Query, sb0Fragment) = oRelativeURLMatch.groups();
     if sb0Path is None:
@@ -279,6 +314,7 @@ class cURL(object):
     oSelf.__u0PortNumber = u0PortNumber;
   
   ### Path #####################################################################
+  # path getter and setter
   @property
   def sbPath(oSelf):
     return oSelf.__sbPath;
@@ -290,21 +326,25 @@ class cURL(object):
     else:
       assert grbPath.match(sb0Path), \
           "sb0Path is not a valid path (%s)" % (repr(sb0Path),);
+      # Automatically add "/" prefix if missing.
       oSelf.__sbPath = (b"/" if (sb0Path[:1] != b"/") else b"") + sb0Path;
-  @property
-  def asbPath(oSelf):
-    # "/A/B//C/%44/" => ["A", "B", "C", "%44"]
-    return [s for s in oSelf.__sbPath[1:].split(b"/") if s] if oSelf.__sbPath != b"/" else [];
   
+  # URL decoded path getter and setter
   @property
   def sURLDecodedPath(oSelf):
     return urllib.parse.unquote(oSelf.__sbPath);
+  @sURLDecodedPath.setter
+  def sURLDecodedPath(oSelf, sURLDecodedPath):
+    oSelf.sbPath = bytes(urllib.parse.quote(sURLDecodedPath), "ascii", "strict");
+  
+  # URL decoded path array getter
   @property
   def asURLDecodedPath(oSelf):
-    # "/A/B//C/%44/" => ["A", "B", "C", "D"]
-    return [urllib.parse.unquote(s) for s in oSelf.asbPath];
+    # "/A/B//C%2F%44/" => ["A", "B", "C", "D"]
+    return [s for s in oSelf.sURLDecodedPath.split("/") if s] if oSelf.__sbPath != b"/" else [];
   
   ### Query ####################################################################
+  # query getter and setter
   @property
   def sb0Query(oSelf):
     return oSelf.__sb0Query;
@@ -315,6 +355,23 @@ class cURL(object):
       assert grbQuery.match(sb0Query), \
           "sb0Query is not a valid query (%s)" % (repr(sb0Query),);
     oSelf.__sb0Query = sb0Query;
+  
+  # URL decoded query getter and setter
+  @property
+  def s0URLDecodedQuery(oSelf):
+    return urllib.parse.unquote(oSelf.__sb0Query) if oSelf.__sb0Query is not None else None;
+  @s0URLDecodedQuery.setter
+  def s0URLDecodedQuery(oSelf, s0URLDecodedQuery):
+    fAssertType("s0URLDecodedQuery", s0URLDecodedQuery, str, None);
+    if s0URLDecodedQuery is not None:
+      sbQuery = bytes(urllib.parse.quote(s0URLDecodedQuery), "ascii", "strict");
+      assert grbQuery.match(sbQuery), \
+          "s0URLDecodedQuery (%s) does not encode to a valid query (%s)" % (repr(s0URLDecodedQuery), repr(sbQuery));
+      oSelf.__sb0Query = sbQuery;
+    else:
+      oSelf.__sb0Query = None;
+  
+  # query dictionary get and set
   def fdsGetQueryDict(oSelf):
     return fdsURLDecodedNameValuePairsFromBytesString(oSelf.__sb0Query) if oSelf.__sb0Query else {};
   def fSetQueryDict(oSelf, d0sQueryValue_by_sbName):
@@ -324,16 +381,17 @@ class cURL(object):
     oSelf.__sb0Query = fsbURLEncodedNameValuePairsToBytesString(d0sQueryValue_by_sbName) \
         if d0sQueryValue_by_sbName is not None else None;
   
+  # query values get and set
   def fs0GetQueryValue(oSelf, sName):
     dsQueryValue_by_sName = oSelf.fdsbGetQueryDict();
     return dsQueryValue_by_sName.get(sName);
-  
   def fSetQueryValue(oSelf, sName, sValue):
     dsQueryValue_by_sName = oSelf.fdsbGetQueryDict();
     dsQueryValue_by_sName[sName] = sValue;
     oSelf.fSetQueryDict(dsQueryValue_by_sName);
   
   ### Fragment #################################################################
+  # fragment getter and setter
   @property
   def sb0Fragment(oSelf):
     return oSelf.__sb0Fragment;
@@ -344,6 +402,13 @@ class cURL(object):
       assert grbFragment.match(sb0Fragment), \
           "sb0Fragment is not a valid fragment (%s)" % (repr(sb0Fragment),);
     oSelf.__sb0Fragment = sb0Fragment;
+  # URL decoded fragment getter and setter
+  @property
+  def sURLDecodedFragment(oSelf):
+    return urllib.parse.unquote(oSelf.__sb0Fragment) if oSelf.__sb0Fragment is not None else None;
+  @sURLDecodedFragment.setter
+  def sURLDecodedFragment(oSelf, sURLDecodedFragment):
+    oSelf.__sb0Fragment = bytes(urllib.parse.quote(sURLDecodedFragment), "ascii", "strict");
   
   ### Convenience ##############################################################
   @property

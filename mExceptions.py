@@ -1,14 +1,21 @@
 class cHTTPException(Exception):
-  def __init__(oSelf, sMessage, dxDetails):
+  def __init__(oSelf, sMessage, *, o0Connection = None, dxDetails = None):
+    assert isinstance(dxDetails, dict), \
+        "dxDetails must be a dict, not %s" % repr(dxDetails);
     oSelf.sMessage = sMessage;
+    oSelf.o0Connection = o0Connection;
     oSelf.dxDetails = dxDetails;
-    Exception.__init__(oSelf, sMessage, dxDetails);
+    Exception.__init__(oSelf, sMessage, o0Connection, dxDetails);
   
-  def __repr__(oSelf):
-    return "<%s %s>" % (oSelf.__class__.__name__, oSelf);
+  def fasDetails(oSelf):
+    return (
+      (["Remote: %s" % str(oSelf.o0Connection.sbRemoteAddress, "ascii", "strict")] if oSelf.o0Connection else [])
+      + ["%s: %s" % (str(sName), repr(xValue)) for (sName, xValue) in oSelf.dxDetails.items()]
+    );
   def __str__(oSelf):
-    sDetails = ", ".join("%s: %s" % (str(sName), repr(xValue)) for (sName, xValue) in oSelf.dxDetails.items());
-    return "%s (%s)" % (oSelf.sMessage, sDetails);
+    return "%s (%s)" % (oSelf.sMessage, ", ".join(oSelf.fasDetails()));
+  def __repr__(oSelf):
+    return "<%s.%s %s>" % (oSelf.__class__.__module__, oSelf.__class__.__name__, oSelf);
 
 class cHTTPInvalidMessageException(cHTTPException):
   # Indicates that data does not contain a valid HTTP Message.
@@ -27,8 +34,16 @@ class cHTTPUnhandledCharsetException(cHTTPInvalidMessageException):
   # body.
   pass;
 
-class cInvalidURLException(cHTTPException):
+class cHTTPInvalidURLException(cHTTPException):
   # Indicates that data does not contain a valid HTTP URL.
+  pass;
+
+class cHTTPMaxConnectionsToServerReachedException(cHTTPException):
+  # Indicates the client would need to create more connections to the server than allowed.
+  pass;
+
+class cHTTPOutOfBandDataException(cHTTPException):
+  # Indicates the server sent data when it was not expected to do so (i.e. a response before a request was sent).
   pass;
 
 acExceptions = [
@@ -36,5 +51,7 @@ acExceptions = [
   cHTTPInvalidMessageException,
   cHTTPInvalidEncodedDataException,
   cHTTPUnhandledCharsetException,
-  cInvalidURLException,
+  cHTTPInvalidURLException,
+  cHTTPMaxConnectionsToServerReachedException,
+  cHTTPOutOfBandDataException,
 ];
