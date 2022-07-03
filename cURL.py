@@ -1,10 +1,10 @@
 import re, urllib.parse;
 
-from mNotProvided import *;
+from mNotProvided import fAssertType, fbIsProvided, fxGetFirstProvidedValue, zNotProvided;
 
 from .fdsURLDecodedNameValuePairsFromBytesString import fdsURLDecodedNameValuePairsFromBytesString;
 from .fsbURLEncodedNameValuePairsToBytesString import fsbURLEncodedNameValuePairsToBytesString;
-from .mExceptions import *;
+from .mExceptions import cHTTPInvalidURLException, acExceptions;
 
 gdtxDefaultPortAndSecure_by_sbProtocol = {
   b"http": (80, False),
