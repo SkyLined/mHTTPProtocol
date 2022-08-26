@@ -85,23 +85,24 @@ gsbIPv6AddressRegExp = (
   rb")"
 );
 gsbDNSNameRegExp = (
-  rb"[A-Za-z0-9]"            #     first char of hostname or lowest level domain name
-  rb"(?:"                    #     optional {
-    rb"[A-Za-z0-9\-]{0,61}"  #       second till second-to-last additional char of hostname or lowest level domain name
-    rb"[A-Za-z0-9]"          #       last additional char of hostname or lowest level domain name
-  rb")?"                     #     }
-  rb"(?:"                    #     optional { (for fully qualified domain names)
-    rb"\."                   #       "."
-    rb"(?:"                  #       repeat {
-      rb"[A-Za-z0-9]"        #         first char of intermediate level domain name
-      rb"(?:"                #         optional {
-        rb"[A-Za-z0-9\-]{0,61}" #        second till second-to-last additional char of intermediate level domain name
-        rb"[A-Za-z0-9]"      #           last additional char of intermediate level domain name
-      rb")?"                 #         }
-      rb"\."                 #         "."
-    rb")*"                   #       } any number of times
-    rb"[A-Za-z]{2,}"         #       top level domain name
-  rb")?"                     #     }
+  rb"[A-Za-z0-9]"               # first char of hostname or lowest level domain name
+  rb"(?:"                       # optional {
+    rb"[A-Za-z0-9\-]{0,61}"     #   second till second-to-last additional char of hostname or lowest level domain name
+    rb"[A-Za-z0-9]"             #   last additional char of hostname or lowest level domain name
+  rb")?"                        # }
+  rb"(?:"                       # optional { (for fully qualified domain names)
+    rb"\."                      #   "."
+    rb"(?:"                     #   repeat {
+      rb"[A-Za-z0-9]"           #     first char of intermediate level domain name
+      rb"(?:"                   #     optional {
+        rb"[A-Za-z0-9\-]{0,61}" #    second till second-to-last additional char of intermediate level domain name
+        rb"[A-Za-z0-9]"         #       last additional char of intermediate level domain name
+      rb")?"                    #     }
+      rb"\."                    #     "."
+    rb")*"                      #   } any number of times
+    rb"[A-Za-z]{2,}"            #   top level domain name
+  rb")?"                        # }
+  rb"\.?"                       # a trailing dot is allowed.
 );
 
 gsbProtocolRegExp = rb"|".join([re.escape(sbProtocol) for sbProtocol in gdtxDefaultPortAndSecure_by_sbProtocol.keys()]);
