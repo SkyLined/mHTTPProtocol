@@ -375,19 +375,19 @@ class cURL(object):
   # query dictionary get and set
   def fdsGetQueryDict(oSelf):
     return fdsURLDecodedNameValuePairsFromBytesString(oSelf.__sb0Query) if oSelf.__sb0Query else {};
-  def fSetQueryDict(oSelf, d0sQueryValue_by_sbName):
-    assert d0sQueryValue_by_sbName is None or isinstance(d0sQueryValue_by_sbName, dict), \
+  def fSetQueryDict(oSelf, d0sQueryValue_by_sName):
+    assert d0sQueryValue_by_sName is None or isinstance(d0sQueryValue_by_sName, dict), \
         "d0sQueryValue_by_sbName must be 'None' or 'dict', not %s (%s)" % \
-        (type(d0sQueryValue_by_sbName), repr(d0sQueryValue_by_sbName));
-    oSelf.__sb0Query = fsbURLEncodedNameValuePairsToBytesString(d0sQueryValue_by_sbName) \
-        if d0sQueryValue_by_sbName is not None else None;
+        (type(d0sQueryValue_by_sName), repr(d0sQueryValue_by_sName));
+    oSelf.__sb0Query = fsbURLEncodedNameValuePairsToBytesString(d0sQueryValue_by_sName) \
+        if d0sQueryValue_by_sName is not None else None;
   
   # query values get and set
   def fs0GetQueryValue(oSelf, sName):
-    dsQueryValue_by_sName = oSelf.fdsbGetQueryDict();
+    dsQueryValue_by_sName = oSelf.fdsGetQueryDict();
     return dsQueryValue_by_sName.get(sName);
   def fSetQueryValue(oSelf, sName, sValue):
-    dsQueryValue_by_sName = oSelf.fdsbGetQueryDict();
+    dsQueryValue_by_sName = oSelf.fdsGetQueryDict();
     dsQueryValue_by_sName[sName] = sValue;
     oSelf.fSetQueryDict(dsQueryValue_by_sName);
   
