@@ -255,7 +255,7 @@ class iHTTPMessage(object):
       try:
         sCharset = str(sb0Charset, 'ascii');
       except UnicodeError as oException:
-        raise cHTTPUnhandledeCharsetException(
+        raise cHTTPUnhandledCharsetException(
           "The charset provided in the Content-Type header is invalid.",
           o0Connection = o0Connection,
           dxDetails = {"sbCharset": sb0Charset},
@@ -263,7 +263,7 @@ class iHTTPMessage(object):
       try:
         sData = str(sbDecompressedBody, sCharset, "strict");
       except LookupError as oException:
-        raise cHTTPUnhandledeCharsetException(
+        raise cHTTPUnhandledCharsetException(
           "The charset provided in the Content-Type header is unknown.",
           o0Connection = o0Connection,
           dxDetails = {"sCharset": sCharset},
@@ -297,7 +297,7 @@ class iHTTPMessage(object):
       try:
         sCharset = str(sb0Charset, "ascii");
       except UnicodeError as oException:
-        raise cHTTPUnhandledeCharsetException(
+        raise cHTTPUnhandledCharsetException(
           "The charset provided in the Content-Type header is invalid.",
           o0Connection = o0Connection,
           dxDetails = {"sbCharset": sb0Charset},
@@ -305,7 +305,7 @@ class iHTTPMessage(object):
       try:
         sbUncompressedBody = bytes(sData, sCharset, "strict");
       except LookupError as oException:
-        raise cHTTPUnhandledeCharsetException(
+        raise cHTTPUnhandledCharsetException(
           "The charset provided in the Content-Type header is unknown.",
           o0Connection = o0Connection,
           dxDetails = {"sCharset": sCharset},
@@ -384,7 +384,7 @@ class iHTTPMessage(object):
   @ShowDebugOutput
   def fAddBodyChunk(oSelf, sbBodyChunk):
     fAssertType("sbBodyChunk", sbBodyChunk, bytes);
-    assert len(sbBody) > 0, \
+    assert len(sbBodyChunk) > 0, \
         "Cannot add an empty chunk!"
     if not oSelf.bChunked:
       assert oSelf.__sb0Body is None, \
@@ -454,7 +454,7 @@ class iHTTPMessage(object):
     sb0Authorization = oSelf.oHeaders.fs0GetUniqueHeaderValue(b"Authorization");
     if sb0Authorization is None:
       return (None, None);
-    sBbasic, sbBase64EncodedUserNameColonPassword = sb0Authorization.strip().split(b" ", 1);
+    sbBasic, sbBase64EncodedUserNameColonPassword = sb0Authorization.strip().split(b" ", 1);
     if sbBasic.lower() != b"basic ":
       return (None, None);
     try:
