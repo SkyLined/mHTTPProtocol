@@ -108,7 +108,7 @@ class cHTTPHeader(object):
     return sb0Value;
   
   def fasbGetHeaderLines(oSelf):
-    asbHeaderLines = [b"%s:%s" % (oSelf.__sbName, oSelf.__asbValueLines[0])];
+    asbHeaderLines = [b"%s: %s" % (oSelf.__sbName, oSelf.__asbValueLines[0])];
     if len(oSelf.__asbValueLines) > 1:
       asbHeaderLines += oSelf.__asbValueLines[1:];
     return asbHeaderLines;
