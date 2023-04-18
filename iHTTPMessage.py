@@ -434,9 +434,11 @@ class iHTTPMessage(object):
     # and update the optionally compressed body to match.
     sLowerStrippedName = sName.strip().lower();
     d0Form_sValue_by_sName = oSelf.d0Form_sValue_by_sName;
-    assert d0Form_sValue_by_sName is not None, \
-        "HTTP Message does not contain URL encoded form data.";
-    dForm_sValue_by_sName = d0Form_sValue_by_sName;
+    if d0Form_sValue_by_sName is None:
+      oSelf.sb0MediaType = b"application/x-www-form-urlencoded";
+      dForm_sValue_by_sName = {};
+    else:
+      dForm_sValue_by_sName = d0Form_sValue_by_sName;
     for sOtherName in dForm_sValue_by_sName.keys():
       if sLowerStrippedName == sOtherName.lower():
         del dForm_sValue_by_sName[sOtherName];
