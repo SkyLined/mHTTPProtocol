@@ -8,7 +8,11 @@ except ModuleNotFoundError as oException:
   ShowDebugOutput = lambda fx: fx; # NOP
   fShowDebugOutput = lambda x, s0 = None: x; # NOP
 
-from mNotProvided import *;
+from mNotProvided import \
+    fAssertType, \
+    fbIsProvided, \
+    fxGetFirstProvidedValue, \
+    zNotProvided;
 
 from .cHTTPHeaders import cHTTPHeaders;
 from .cURL import cURL;
@@ -16,7 +20,11 @@ from .fdsURLDecodedNameValuePairsFromString import fdsURLDecodedNameValuePairsFr
 from .fsbCompressData import fsbCompressData;
 from .fsbDecompressData import fsbDecompressData;
 from .fsbURLEncodedNameValuePairsToBytesString import fsbURLEncodedNameValuePairsToBytesString;
-from .mExceptions import *;
+from .mExceptions import \
+    acExceptions, \
+    cHTTPInvalidEncodedDataException, \
+    cHTTPInvalidMessageException, \
+    cHTTPUnhandledCharsetException;
 
 guBrotliCompressionQuality = 5;
 guGZipCompressionLevel = 5;

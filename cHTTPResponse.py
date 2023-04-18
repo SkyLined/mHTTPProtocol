@@ -6,7 +6,11 @@ except ModuleNotFoundError as oException:
   ShowDebugOutput = lambda fx: fx; # NOP
   fShowDebugOutput = lambda x, s0 = None: x; # NOP
 
-from mNotProvided import *;
+from mNotProvided import \
+    fAssertType, \
+    fbIsProvided, \
+    fxGetFirstProvidedValue, \
+    zNotProvided;
 
 from .dsbHTTPCommonReasonPhrase_by_uStatusCode import dsbHTTPCommonReasonPhrase_by_uStatusCode;
 from .iHTTPMessage import iHTTPMessage;
