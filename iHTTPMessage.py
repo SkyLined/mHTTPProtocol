@@ -505,7 +505,7 @@ class iHTTPMessage(object):
       "Host: %s" % str(o0HostHeader.sbValue, 'latin1') if o0HostHeader and not gbShowAllHeadersInStrReturnValue else None,
     ] if s] + (
       [
-       str(b"%s: %s" % (oHeader.sbName, oHeader.sbValue), 'latin1')
+        str(b"%s: %s" % (oHeader.sbName, oHeader.sbValue), 'latin1')
         for oHeader in oSelf.oHeaders.faoGetHeaders()
       ] if gbShowAllHeadersInStrReturnValue else []
     ) + [s for s in [
