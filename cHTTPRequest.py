@@ -8,12 +8,14 @@ except ModuleNotFoundError as oException:
   ShowDebugOutput = lambda fx: fx; # NOP
   fShowDebugOutput = lambda x, s0 = None: x; # NOP
 
-from mNotProvided import *;
+from mNotProvided import \
+  fAssertType, \
+  fxGetFirstProvidedValue, \
+  zNotProvided;
 
 from .cHTTPHeaders import cHTTPHeaders;
 from .cHTTPResponse import cHTTPResponse;
 from .iHTTPMessage import iHTTPMessage;
-from .cURL import cURL;
 from .fsbDecompressData import fsbDecompressData;
 from .mExceptions import *;
 
