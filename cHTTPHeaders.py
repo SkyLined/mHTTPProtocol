@@ -6,10 +6,10 @@ except ModuleNotFoundError as oException:
   ShowDebugOutput = lambda fx: fx; # NOP
   fShowDebugOutput = lambda x, s0 = None: x; # NOP
 
-from mNotProvided import *;
+from mNotProvided import fAssertType;
 
 from .cHTTPHeader import cHTTPHeader;
-from .mExceptions import *;
+from .mExceptions import cHTTPInvalidMessageException;
 
 class cHTTPHeaders(object):
   @classmethod

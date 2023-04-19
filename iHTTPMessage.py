@@ -432,7 +432,7 @@ class iHTTPMessage(object):
     # remove all existing values with the given name,
     # if the value is not None, add the new named value,
     # and update the optionally compressed body to match.
-    sLowerStrippedName = sName.strip().lower();
+    sLowerStrippedName = sName.lower();
     d0Form_sValue_by_sName = oSelf.d0Form_sValue_by_sName;
     if d0Form_sValue_by_sName is None:
       oSelf.sb0MediaType = b"application/x-www-form-urlencoded";
