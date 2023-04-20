@@ -224,7 +224,17 @@ class iHTTPMessage(object):
 #      dxDetails = {"sbVersion": oSelf.sbVersion},
 #    );
     return True; # Closing the connection is the safest option.
-  
+  @bCloseConnection.setter
+  @ShowDebugOutput
+  def bCloseConnection(oSelf, bValue):
+    if bValue:
+      oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Connection", b"Close");
+    else:
+      oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Connection", b"Keep-Alive");
+      # If there is non-chunked data in the body, a Content-Length header must be added:
+      if not oSelf.bChunked and oSelf.__sb0Body:
+        oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Length", b"%d" % len(oSelf.__sb0Body));
+
   @property
   @ShowDebugOutput
   def bCompressed(oSelf):
@@ -355,14 +365,11 @@ class iHTTPMessage(object):
     oSelf.oHeaders.fbRemoveHeadersForName(b"Transfer-Encoding");
     if oSelf.sbVersion.upper() != b"HTTP/1.1":
       bCloseConnectionInsteadOfUsingContentLength = True;
-    if bCloseConnectionInsteadOfUsingContentLength:
-      oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Connection", b"Close");
-      oSelf.oHeaders.fbRemoveHeadersForName(b"Content-Length");
-    elif sb0Body is not None:
-      # Add a 'Content-Length' header if sb0Body is not None;
-      oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Length", b"%d" % len(sb0Body));
     oSelf.__sb0Body = sb0Body;
     oSelf.__a0sbBodyChunks = None;
+    oSelf.bCloseConnection = bCloseConnectionInsteadOfUsingContentLength;
+    if bCloseConnectionInsteadOfUsingContentLength:
+      oSelf.oHeaders.fbRemoveHeadersForName(b"Content-Length");
   
   @property
   @ShowDebugOutput
