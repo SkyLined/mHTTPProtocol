@@ -22,8 +22,10 @@ class cHTTPInvalidMessageException(cHTTPException):
   pass;
 
 class cHTTPInvalidEncodedDataException(cHTTPInvalidMessageException):
-  # Indicates that data cannot be encoded from or decoded to Unicode using the
-  # "charset" provided in the "Content-Type" header of a HTTP message.
+  # Indicates that data compression or decompression using the compression
+  # technique specified in the "Content-Encoding" header of the http message
+  # failed, or that encoding from or decoding to Unicode using the character
+  # encoding technique specified in the "Content-Type" header failed.
   # If no "charset" is provided, the data cannot be encoded because it contains
   # Unicode characters that are not bytes (i.e. not in range '\x00'-'\xFF')
   pass;
