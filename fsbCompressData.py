@@ -12,7 +12,7 @@ def fsbCompressData(sbData, sbCompressionType):
   elif sbLowerCompressionType in [b"gzip", b"x-gzip"]:
     oCompressionObject = zlib.compressobj(guGZipCompressionLevel, zlib.DEFLATED, zlib.MAX_WBITS | 0x10);
     return oCompressionObject.compress(sbData) + oCompressionObject.flush();
-  elif sbLowerCompressionType == b"identity":
+  elif sbLowerCompressionType in [B"", b"identity"]:
     return sbData; # No compression.
   elif sbLowerCompressionType == b"zlib":
     oCompressionObject = zlib.compressobj(guZLibCompressionLevel, zlib.DEFLATED, zlib.MAX_WBITS);
