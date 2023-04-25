@@ -132,6 +132,14 @@ class iHTTPMessage(object):
         oSelf.fSetData(s0Data);
         
     oSelf.o0AdditionalHeaders = o0AdditionalHeaders;
+    # The sender can tell us the body is compressed using one algorithm but
+    # encode it using another. The code can deal with this if you set the 
+    # `bTryOtherCompressionTypesOnFailure` argument to True when attempting to
+    # decompress the body: it will attempt every single decompression algorithm
+    # it knows until it finds one that works. If you do this and the actual
+    # decompression algorithm(s) used differ from those provided in the header
+    # this property will be set to a list of the decompression algorithms used.
+    oSelf.asb0ActualCompressionTypes = None;
   
   def __fSetContentTypeHeader(oSelf, sb0ContentType, sb0Charset, sb0Boundary):
     fAssertType("sb0ContentType", sb0ContentType, bytes, None);
@@ -252,9 +260,16 @@ class iHTTPMessage(object):
   @property
   def s0Data(oSelf):
     return oSelf.fs0GetData();
-  def fs0GetData(oSelf, o0Connection = None):
+  def fs0GetData(oSelf,
+    o0Connection = None,
+    bTryOtherCompressionTypesOnFailure = False,
+    bIgnoreDecompressionFailures = False,
+  ):
     # Returns decompressed and decoded body based on the Content-Encoding header.
-    sb0DecompressedBody = oSelf.sb0DecompressedBody;
+    sb0DecompressedBody = oSelf.fsb0GetDecompressedBody(
+      bTryOtherCompressionTypesOnFailure = bTryOtherCompressionTypesOnFailure,
+      bIgnoreDecompressionFailures = bIgnoreDecompressionFailures,
+    );
     if sb0DecompressedBody is None:
       return None;
     sbDecompressedBody = sb0DecompressedBody; # Never None past this point.
@@ -331,13 +346,50 @@ class iHTTPMessage(object):
   
   @property
   def sb0DecompressedBody(oSelf):
+    return oSelf.fsb0GetDecompessedBody();
+
+  def fsb0GetDecompressedBody(oSelf,
+    bTryOtherCompressionTypesOnFailure = False,
+    bIgnoreDecompressionFailures = False,
+  ):
     # Returns decoded and decompressed body based on the Content-Encoding header.
     sb0Data = oSelf.__sb0Body if not oSelf.bChunked else b"".join(oSelf.__a0sbBodyChunks);
     if sb0Data is None:
       return None;
     sbData = sb0Data; # Never None past this point.
+    if bTryOtherCompressionTypesOnFailure:
+      # We'll keep track of the actual list in case the one in the message is
+      # incorrect.
+      asbActualDecompressionTypes = [];
     for sbCompressionType in reversed(oSelf.asbCompressionTypes):
-      sbData = fsbDecompressData(sbData, sbCompressionType);
+      try:
+        sbData = fsbDecompressData(sbData, sbCompressionType);
+      except cHTTPInvalidEncodedDataException as oOriginalException:
+        # Some servers will tell us the wrong encoding type. If asked, this code
+        # can try all known compression types to see if the message can be decoded
+        # regardless.
+        if not bTryOtherCompressionTypesOnFailure:
+          # we'll throw an error unless we're asked to completely ignore de-encoding errors.
+          if bIgnoreDecompressionFailures:
+            continue;
+          raise;
+        for sbCompressionType in fsbDecompressData.asbSupportedCompressionTypes:
+          try:
+            sbData = fsbDecompressData(sbData, sbCompressionType);
+          except cHTTPInvalidEncodedDataException:
+            pass;
+          else:
+            # The list of compression types in the message is invalid: save the
+            # actual list:
+            oSelf.asb0ActualCompressionTypes = asbActualDecompressionTypes;
+            break;
+        else:
+          # Unable to decompress with any known algorithm: throw an exception if this
+          # should not be ignored.
+          if bIgnoreDecompressionFailures:
+            continue; # do not add anything to the actual compression types list
+          raise oOriginalException;
+      asbActualDecompressionTypes.append(sbCompressionType);
     return sbData;
   
   @ShowDebugOutput

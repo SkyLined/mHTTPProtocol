@@ -1,7 +1,7 @@
 
 def fTestCompression():
-  from fsbCompressData import fsbCompressData;
-  from fsbDecompressData import fsbDecompressData;
+  from mHTTPProtocol.fsbCompressData import fsbCompressData;
+  from mHTTPProtocol.fsbDecompressData import fsbDecompressData;
   
   assert set(fsbCompressData.asbSupportedCompressionTypes) == set(fsbDecompressData.asbSupportedCompressionTypes), \
       "fsbCompressData does not support the same compression types as fsbDecompressData:\nfsbCompressData: %s\nfsbDecompressData: %s" % (
