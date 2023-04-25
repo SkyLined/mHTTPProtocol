@@ -16,10 +16,9 @@
       os.path.join(sProductFolderPath, "modules"),
     ]
     sys.path = asModulesPaths + [sPath for sPath in sys.path if sPath not in asModulesPaths];
+    from foConsoleLoader import foConsoleLoader;
+    oConsole = foConsoleLoader();
     if bDebugOutput:
-      from foConsoleLoader import foConsoleLoader;
-      oConsole = foConsoleLoader();
-
       from mExitCodes import guExitCodeInternalError, guExitCodeBadDependencyError;
       from mColorsAndChars import \
           COLOR_BUSY, CHAR_BUSY, \
