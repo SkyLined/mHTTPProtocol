@@ -357,10 +357,12 @@ class iHTTPMessage(object):
     if sb0Data is None:
       return None;
     sbData = sb0Data; # Never None past this point.
-    if bTryOtherCompressionTypesOnFailure:
-      # We'll keep track of the actual list in case the one in the message is
-      # incorrect.
-      asbActualDecompressionTypes = [];
+    # We'll keep track of the actual list of compression types processed. This
+    # tells you at what point decompression fails if there are multiple compressions
+    # applied and decompression fails
+    # if `bTryOtherCompressionTypesOnFailure` is True, this tells you the actual
+    # compression types found, in case there is a mismatch with the Content-Encoding header.
+    oSelf.asb0ActualCompressionTypes = [];
     for sbCompressionType in reversed(oSelf.asbCompressionTypes):
       try:
         sbData = fsbDecompressData(sbData, sbCompressionType);
@@ -379,9 +381,8 @@ class iHTTPMessage(object):
           except cHTTPInvalidEncodedDataException:
             pass;
           else:
-            # The list of compression types in the message is invalid: save the
-            # actual list:
-            oSelf.asb0ActualCompressionTypes = asbActualDecompressionTypes;
+            # The list of compression types in the message is invalid but we found a way
+            # to work around that.
             break;
         else:
           # Unable to decompress with any known algorithm: throw an exception if this
@@ -389,7 +390,7 @@ class iHTTPMessage(object):
           if bIgnoreDecompressionFailures:
             continue; # do not add anything to the actual compression types list
           raise oOriginalException;
-      asbActualDecompressionTypes.append(sbCompressionType);
+        oSelf.asb0ActualCompressionTypes.append(sbCompressionType);
     return sbData;
   
   @ShowDebugOutput
