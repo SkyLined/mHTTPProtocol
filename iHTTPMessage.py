@@ -15,7 +15,6 @@ from mNotProvided import \
     zNotProvided;
 
 from .cHTTPHeaders import cHTTPHeaders;
-from .cURL import cURL;
 from .fdsURLDecodedNameValuePairsFromString import fdsURLDecodedNameValuePairsFromString;
 from .fsbCompressData import fsbCompressData;
 from .fsbDecompressData import fsbDecompressData;
@@ -139,7 +138,7 @@ class iHTTPMessage(object):
     # it knows until it finds one that works. If you do this and the actual
     # decompression algorithm(s) used differ from those provided in the header
     # this property will be set to a list of the decompression algorithms used.
-    oSelf.asb0ActualCompressionTypes = None;
+    oSelf.__a0sbActualCompressionTypes = None;
   
   def __fSetContentTypeHeader(oSelf, sb0ContentType, sb0Charset, sb0Boundary):
     fAssertType("sb0ContentType", sb0ContentType, bytes, None);
@@ -348,10 +347,21 @@ class iHTTPMessage(object):
   def sb0DecompressedBody(oSelf):
     return oSelf.fsb0GetDecompessedBody();
 
+  @property
+  def asbActualCompressionTypes(oSelf):
+    # We'll decompress the body, trying to fix errors and ignoring them if we cannot
+    # to get the actual compression types as best we can.
+    oSelf.fsb0GetDecompressedBody(
+      bTryOtherCompressionTypesOnFailure = True,
+      bIgnoreDecompressionFailures = True,
+    );
+    return oSelf.__a0sbActualCompressionTypes;
+  
   def fsb0GetDecompressedBody(oSelf,
     bTryOtherCompressionTypesOnFailure = False,
     bIgnoreDecompressionFailures = False,
   ):
+    oSelf.__a0sbActualCompressionTypes = [];
     # Returns decoded and decompressed body based on the Content-Encoding header.
     sb0Data = oSelf.__sb0Body if not oSelf.bChunked else b"".join(oSelf.__a0sbBodyChunks);
     if sb0Data is None:
@@ -362,7 +372,6 @@ class iHTTPMessage(object):
     # applied and decompression fails
     # if `bTryOtherCompressionTypesOnFailure` is True, this tells you the actual
     # compression types found, in case there is a mismatch with the Content-Encoding header.
-    oSelf.asb0ActualCompressionTypes = [];
     for sbCompressionType in reversed(oSelf.asbCompressionTypes):
       try:
         sbData = fsbDecompressData(sbData, sbCompressionType);
@@ -390,9 +399,9 @@ class iHTTPMessage(object):
           if bIgnoreDecompressionFailures:
             continue; # do not add anything to the actual compression types list
           raise oOriginalException;
-        oSelf.asb0ActualCompressionTypes.append(sbCompressionType);
+        oSelf.__a0sbActualCompressionTypes.append(sbCompressionType);
     return sbData;
-  
+
   @ShowDebugOutput
   def fApplyCompressionAndSetBody(oSelf, sbData, bCloseConnectionInsteadOfUsingContentLength = False):
     fAssertType("sbData", sbData, bytes);
