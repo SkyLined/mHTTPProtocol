@@ -399,7 +399,7 @@ class iHTTPMessage(object):
           if bIgnoreDecompressionFailures:
             continue; # do not add anything to the actual compression types list
           raise oOriginalException;
-        oSelf.__a0sbActualCompressionTypes.append(sbCompressionType);
+      oSelf.__a0sbActualCompressionTypes.append(sbCompressionType);
     return sbData;
 
   @ShowDebugOutput
