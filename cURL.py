@@ -203,17 +203,23 @@ class cURL(object):
     else:
       oSelf.sb0Fragment = sb0Fragment;
   
-  def foFromRelativeBytesString(oSelf, sbURL, bMustBeRelative = False):
+  def foFromAbsoluteOrRelativeBytesString(oSelf, sbURL):
     fAssertType("sbURL", sbURL, bytes);
-    oRelativeURLMatch = grbRelativeURL.match(sbURL);
-    if not oRelativeURLMatch:
-      if bMustBeRelative:
-        raise cHTTPInvalidURLException(
-          "Invalid relative URL",
-          dxDetails = {"sbURL": sbURL},
-        );
+    # Check if it is not an absolute URL:
+    try:
       return cURL.foFromBytesString(sbURL);
-    (sb0Path, sb0Query, sb0Fragment) = oRelativeURLMatch.groups();
+    except cHTTPInvalidURLException:
+      return oSelf.foFromRelativeBytesString(sbURL);
+  
+  def foFromRelativeBytesString(oSelf, sbURL):
+    fAssertType("sbURL", sbURL, bytes);
+    o0RelativeURLMatch = grbRelativeURL.match(sbURL);
+    if not o0RelativeURLMatch:
+      raise cHTTPInvalidURLException(
+        "Invalid relative URL",
+        dxDetails = {"sbURL": sbURL},
+      );
+    (sb0Path, sb0Query, sb0Fragment) = o0RelativeURLMatch.groups();
     if sb0Path is None:
       # If no path is provided, don't change the path in the clone.
       sbzPath = zNotProvided;
