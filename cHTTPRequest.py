@@ -75,8 +75,7 @@ class cHTTPRequest(iHTTPMessage):
     sb0Body = None,
     s0Data = None,
     a0sbBodyChunks = None,
-    o0AdditionalHeaders = None,
-    bAutomaticallyAddContentLengthHeader = False
+    o0AdditionalHeaders = None
   ):
     fAssertType("sbURL", sbURL, bytes);
     fAssertType("sbzMethod", sbzMethod, bytes, zNotProvided);
@@ -94,8 +93,7 @@ class cHTTPRequest(iHTTPMessage):
       sb0Body,
       s0Data,
       a0sbBodyChunks,
-      o0AdditionalHeaders,
-      bAutomaticallyAddContentLengthHeader
+      o0AdditionalHeaders
     );
   
   @property
@@ -145,7 +143,6 @@ class cHTTPRequest(iHTTPMessage):
     sb0Charset = None,
     o0AdditionalHeaders = None,
     sb0MediaType = None,
-    bAutomaticallyAddContentLengthHeader = False
   ):
     oResponse = cHTTPResponse(
       sbzVersion = fxGetFirstProvidedValue(sbzVersion, oSelf.sbVersion),
@@ -156,7 +153,6 @@ class cHTTPRequest(iHTTPMessage):
       s0Data = s0Data,
       a0sbBodyChunks = a0sbBodyChunks,
       o0AdditionalHeaders = o0AdditionalHeaders,
-      bAutomaticallyAddContentLengthHeader = bAutomaticallyAddContentLengthHeader,
     );
     if sb0MediaType or sb0Body or s0Data or a0sbBodyChunks:
       oResponse.sb0MediaType = sb0MediaType if sb0MediaType is not None else b"application/octet-stream";

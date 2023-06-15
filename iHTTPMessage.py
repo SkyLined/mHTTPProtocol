@@ -72,8 +72,7 @@ class iHTTPMessage(object):
     sb0Body = None,
     s0Data = None,
     a0sbBodyChunks = None,
-    o0AdditionalHeaders = None,
-    bAutomaticallyAddContentLengthHeader = False
+    o0AdditionalHeaders = None
   ):
     fAssertType("sbzVersion", sbzVersion, bytes, zNotProvided);
     fAssertType("o0zHeaders", o0zHeaders, cHTTPHeaders, None, zNotProvided); # None means no headers.
@@ -98,26 +97,12 @@ class iHTTPMessage(object):
           "Unsupported HTTP version %s" % repr(oSelf.sbVersion);
       oSelf.oHeaders = cHTTPHeaders.foFromDict(dDefaultHeader_sbValue_by_sbName);
     
-    bConnectionCloseHeaderPresent = oSelf.oHeaders.fbHasUniqueValueForName(b"Connection", b"Close");
-    o0ContentLengthHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName(b"Content-Length");
     bChunked = oSelf.oHeaders.fbHasUniqueValueForName(b"Transfer-Encoding", b"Chunked");
     if sb0Body is not None:
       assert not bChunked, \
             "Cannot provide sb0Body (%s) with a \"Transfer-Encoded: Chunked\" header!" % repr(sb0Body);
-      oSelf.__sb0Body = sb0Body;
-      oSelf.__a0sbBodyChunks = None;
-      o0ContentLengthHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName(b"Content-Length");
-      if o0ContentLengthHeader is None:
-        assert bConnectionCloseHeaderPresent or bAutomaticallyAddContentLengthHeader, \
-            "Cannot provide sb0Body (%s) without a \"Content-Length\" header or setting bAutomaticallyAddContentLengthHeader!" % repr(sb0Body);
-        oSelf.oHeaders.foAddHeaderForNameAndValue(b"Content-Length", b"%d" % len(sb0Body));
-      else:
-        assert int(o0ContentLengthHeader.sbValue) == len(oSelf.__sb0Body), \
-            "Cannot provide %d bytes sb0Body (%s) with a Content-Length: %s header!" % \
-            (len(sb0Body), repr(sb0Body), repr(o0ContentLengthHeader.sbValue));
+      oSelf.fSetBody(sb0Body);
     else:
-      assert o0ContentLengthHeader is None, \
-          "Cannot have a %s header without a body" % repr(o0ContentLengthHeader.sbValue);
       oSelf.__sb0Body = None;
       if a0sbBodyChunks:
         assert bChunked, \
