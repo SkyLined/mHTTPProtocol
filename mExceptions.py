@@ -44,10 +44,6 @@ class cHTTPMaxConnectionsToServerReachedException(cHTTPException):
   # Indicates the client would need to create more connections to the server than allowed.
   pass;
 
-class cHTTPOutOfBandDataException(cHTTPException):
-  # Indicates the server sent data when it was not expected to do so (i.e. a response before a request was sent).
-  pass;
-
 acExceptions = [
   cHTTPException,
   cHTTPInvalidMessageException,
@@ -55,5 +51,4 @@ acExceptions = [
   cHTTPUnhandledCharsetException,
   cHTTPInvalidURLException,
   cHTTPMaxConnectionsToServerReachedException,
-  cHTTPOutOfBandDataException,
 ];
