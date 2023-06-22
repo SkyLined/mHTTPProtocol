@@ -264,7 +264,13 @@ class iHTTPMessage(object):
     return sData;
   
   @ShowDebugOutput
-  def fSetData(oSelf, sData, bCloseConnectionInsteadOfUsingContentLength = False, o0Connection = None):
+  def fSetData(oSelf,
+    sData,
+    *,
+    bAddContentLengthHeader = True,
+    bCloseConnection = False,
+    o0Connection = None,
+  ):
     # Convert Unicode string to bytes using the "charset" defined in the headers.
     # Then apply compression to the result and set it as the body of the message.
     fAssertType("sData", sData, str);
@@ -304,7 +310,11 @@ class iHTTPMessage(object):
           dxDetails = {"sCharset": sCharset, "sData": sData},
         );
     # Sets the (optionally) compressed body of the message.
-    oSelf.fApplyCompressionAndSetBody(sbUncompressedBody, bCloseConnectionInsteadOfUsingContentLength);
+    oSelf.fApplyCompressionAndSetBody(
+      sbUncompressedBody,
+      bAddContentLengthHeader = bAddContentLengthHeader,
+      bCloseConnection = bCloseConnection,
+    );
   
   @property
   def sb0DecompressedBody(oSelf):
@@ -366,12 +376,21 @@ class iHTTPMessage(object):
     return sbData;
 
   @ShowDebugOutput
-  def fApplyCompressionAndSetBody(oSelf, sbData, bCloseConnectionInsteadOfUsingContentLength = False):
+  def fApplyCompressionAndSetBody(oSelf,
+    sbData,
+    *,
+    bAddContentLengthHeader = True,
+    bCloseConnection = False,
+  ):
     fAssertType("sbData", sbData, bytes);
     # Sets the (optionally) compressed body of the message.
     for sbCompressionType in reversed(oSelf.asbCompressionTypes):
       sbData = fsbCompressData(sbData, sbCompressionType);
-    oSelf.fSetBody(sbData, bCloseConnectionInsteadOfUsingContentLength);
+    oSelf.fSetBody(
+      sbData,
+      bAddContentLengthHeader = bAddContentLengthHeader,
+      bCloseConnection = bCloseConnection,
+    );
   
   @property
   @ShowDebugOutput
@@ -386,15 +405,19 @@ class iHTTPMessage(object):
     ]) + b"0\r\n\r\n";
   
   @ShowDebugOutput
-  def fSetBody(oSelf, sb0Body, bCloseConnectionInsteadOfUsingContentLength = False):
+  def fSetBody(oSelf,
+    sb0Body,
+    *,
+    bAddContentLengthHeader = True,
+    bCloseConnection = False,
+  ):
     oSelf.oHeaders.fbRemoveHeadersForName(b"Transfer-Encoding");
-    if oSelf.sbVersion.upper() != b"HTTP/1.1":
-      bCloseConnectionInsteadOfUsingContentLength = True;
     oSelf.__sb0Body = sb0Body;
     oSelf.__a0sbBodyChunks = None;
-    oSelf.bCloseConnection = bCloseConnectionInsteadOfUsingContentLength;
-    if bCloseConnectionInsteadOfUsingContentLength:
-      oSelf.oHeaders.fbRemoveHeadersForName(b"Content-Length");
+    if bAddContentLengthHeader:
+      oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Length", b"%d" % len(oSelf.__sb0Body));
+    if bCloseConnection:
+      oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Connection", b"Close");
   
   @property
   @ShowDebugOutput
