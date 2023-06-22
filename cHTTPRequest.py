@@ -69,6 +69,7 @@ class cHTTPRequest(iHTTPMessage):
   @ShowDebugOutput
   def __init__(oSelf,
     sbURL,
+    *,
     sbzMethod = zNotProvided,
     sbzVersion = zNotProvided,
     o0zHeaders = zNotProvided,
@@ -88,12 +89,12 @@ class cHTTPRequest(iHTTPMessage):
     oSelf.__sbURL = sbURL;
     oSelf.__sbMethod = fxGetFirstProvidedValue(sbzMethod, b"POST" if (sb0Body or s0Data or a0sbBodyChunks) else b"GET");
     iHTTPMessage.__init__(oSelf,
-      sbzVersion,
-      o0zHeaders,
-      sb0Body,
-      s0Data,
-      a0sbBodyChunks,
-      o0AdditionalHeaders
+      sbzVersion = sbzVersion,
+      o0zHeaders = o0zHeaders,
+      sb0Body = sb0Body,
+      s0Data = s0Data,
+      a0sbBodyChunks = a0sbBodyChunks,
+      o0AdditionalHeaders = o0AdditionalHeaders,
     );
   
   @property

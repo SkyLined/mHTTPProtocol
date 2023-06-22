@@ -80,6 +80,7 @@ class cHTTPResponse(iHTTPMessage):
   
   @ShowDebugOutput
   def __init__(oSelf,
+    *,
     sbzVersion = zNotProvided,
     uzStatusCode = zNotProvided,
     sbzReasonPhrase = zNotProvided,
@@ -95,12 +96,12 @@ class cHTTPResponse(iHTTPMessage):
       oSelf.fsbGetDefaultReasonPhraseForStatus(oSelf.uStatusCode)
     );
     iHTTPMessage.__init__(oSelf,
-      sbzVersion,
-      o0zHeaders,
-      sb0Body,
-      s0Data,
-      a0sbBodyChunks,
-      o0AdditionalHeaders,
+      sbzVersion = sbzVersion,
+      o0zHeaders = o0zHeaders,
+      sb0Body = sb0Body,
+      s0Data = s0Data,
+      a0sbBodyChunks = a0sbBodyChunks,
+      o0AdditionalHeaders = o0AdditionalHeaders,
     );
   
   @property
