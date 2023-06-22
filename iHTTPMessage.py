@@ -67,6 +67,7 @@ class iHTTPMessage(object):
   
   @ShowDebugOutput
   def __init__(oSelf,
+    *,
     sbzVersion = zNotProvided,
     o0zHeaders = zNotProvided,
     sb0Body = None,
@@ -193,39 +194,16 @@ class iHTTPMessage(object):
   
   @property
   @ShowDebugOutput
-  def bCloseConnection(oSelf):
+  def bIndicatesConnectionShouldBeClosed(oSelf):
     o0ConnectionHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName(b"Connection");
     if o0ConnectionHeader:
-      if o0ConnectionHeader.sbLowerName == b"close":
-        fShowDebugOutput("'Connection: Close' header found");
-        return True;
-      if o0ConnectionHeader.sbLowerName == b"keep-alive":
-        fShowDebugOutput("'Connection: Keep-alive' header found");
-        return False;
-      # Any other values are ignored.
-    # No valid Connection header found: return default, which depends on the HTTP version:
-    if oSelf.sbVersion.upper() == b"HTTP/1.0":
-      fShowDebugOutput("No 'Connection' header found; defaulting to 'Close' for %s" % oSelf.sbVersion);
-      return True;
-    elif oSelf.sbVersion.upper() == b"HTTP/1.1":
-      fShowDebugOutput("No 'Connection' header found; defaulting to 'Keep-alive' for %s" % oSelf.sbVersion);
+      for sbTokenWithOptionalWhitespace in o0ConnectionHeader.sbValue.split(b","):
+        sbLowercaseToken = sbTokenWithOptionalWhitespace.strip().lower();
+        if sbLowercaseToken == b"close":
+          return True;
+    if oSelf.sbVersion == b"HTTP/1.1":
       return False;
-# This is a decent sanity check, but we want to be able to work with invalid messages too.
-#    raise cHTTPInvalidMessageException(
-#      "Invalid HTTP version!",
-#      dxDetails = {"sbVersion": oSelf.sbVersion},
-#    );
-    return True; # Closing the connection is the safest option.
-  @bCloseConnection.setter
-  @ShowDebugOutput
-  def bCloseConnection(oSelf, bValue):
-    if bValue:
-      oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Connection", b"Close");
-    else:
-      oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Connection", b"Keep-Alive");
-      # If there is non-chunked data in the body, a Content-Length header must be added:
-      if not oSelf.bChunked and oSelf.__sb0Body:
-        oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Length", b"%d" % len(oSelf.__sb0Body));
+    return True;
 
   @property
   @ShowDebugOutput
