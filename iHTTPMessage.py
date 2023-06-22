@@ -551,8 +551,6 @@ class iHTTPMessage(object):
     o0ContentEncodingHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName(b"Content-Encoding", oSelf.o0AdditionalHeaders);
     sCompressionTypes = ">".join([str(s.strip(), 'latin1') for s in o0ContentEncodingHeader.sbValue.split(b",")]) if o0ContentEncodingHeader else None;
     
-    bCloseConnection = oSelf.oHeaders.fbHasUniqueValueForName(b"Connection", b"Close");
-    
     o0HostHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName(b"Host", oSelf.o0AdditionalHeaders);
     o0ContentTypeHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName(b"Content-Type", oSelf.o0AdditionalHeaders);
     s0MediaType = str(o0ContentTypeHeader.sbValue.split(b";")[0].strip(), 'latin1') if o0ContentTypeHeader else None;
@@ -570,7 +568,6 @@ class iHTTPMessage(object):
       sBodyDetails,
       "%s compressed" % sCompressionTypes if sCompressionTypes else None,
       "%d additional headers" % oSelf.o0AdditionalHeaders.uNumberOfHeaders if oSelf.o0AdditionalHeaders else None,
-      "close connection" if bCloseConnection else "",
     ] if s];
   
   def __repr__(oSelf):
