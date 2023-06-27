@@ -21,6 +21,7 @@ from .mExceptions import *;
 
 gsbSupportedCompressionTypes= b", ".join(fsbDecompressData.asbSupportedCompressionTypes);
 gsbUserAgent = b"Mozilla/5.0 (compatible)";
+grMethod = re.compile(b"^[A-Z]+$");
 
 class cHTTPRequest(iHTTPMessage):
   ddDefaultHeader_sbValue_by_sbName_by_sbHTTPVersion = {
@@ -119,7 +120,7 @@ class cHTTPRequest(iHTTPMessage):
   @sbMethod.setter
   def sbMethod(oSelf, sbMethod):
     fAssertType("sbMethod", sbMethod, bytes);
-    assert re.match("^[A-Z]+$", sbMethod), \
+    assert grMethod.match(sbMethod), \
         "'sbMethod' must have one or more uppercase letters, not %s:%s" % (type(sbMethod), repr(sbMethod));
     oSelf.__sbMethod = sbMethod;
   
