@@ -39,6 +39,33 @@ class iHTTPMessage(object):
   asbSupportedCompressionTypes = list(set(fsbCompressData.asbSupportedCompressionTypes).intersection(fsbDecompressData.asbSupportedCompressionTypes));
   
   @classmethod
+  def foFromBytesString(cClass, sbData, o0Connection = None, bStrictErrorChecking = True):
+    asbStatusHeadersAndBody = sbData.split(b"\r\n\r\n", 1);
+    # If the data ends after the last header line (i.e. it ends with "\r\n")
+    # the below will result in `[b"...\r\n"]`. Otherwise it ends with the last
+    # headerline without a CRLF. We will have to remove the CRLF in the first case
+    # before splitting the rest at CRLFs, to avoid having an empty string at the end:
+    asbStatusHeadersLines = asbStatusHeadersAndBody[0].rstrip(b"\r\n").split(b"\r\n");
+    sbStatusLine = asbStatusHeadersLines.pop(0);
+    asbHeadersLines = asbStatusHeadersLines;
+    sb0Body = None if len(asbStatusHeadersAndBody) == 1 else asbStatusHeadersAndBody[1];
+    dxStatusLineArguments = cClass.fdxParseStatusLine(
+      sbStatusLine,
+      o0Connection = o0Connection,
+      bStrictErrorChecking = bStrictErrorChecking,
+    );
+    oHeaders = cClass.foParseHeaderLines(
+      asbHeadersLines,
+      o0Connection = o0Connection,
+      bStrictErrorChecking = bStrictErrorChecking,
+    );
+    return cClass(
+      o0zHeaders = oHeaders,
+      sb0Body = sb0Body,
+      **dxStatusLineArguments,
+    );
+      
+  @classmethod
   @ShowDebugOutput
   def foParseHeaderLines(cClass, asbHeaderLines, o0Connection = None, bStrictErrorChecking = True):
     oHeaders = cHTTPHeaders();
