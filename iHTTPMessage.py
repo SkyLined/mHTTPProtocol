@@ -351,8 +351,8 @@ class iHTTPMessage(object):
   
   @property
   def sb0DecompressedBody(oSelf):
-    return oSelf.fsb0GetDecompessedBody();
-
+    return oSelf.fsb0GetDecompressedBody();
+  
   @property
   def asbActualCompressionTypes(oSelf):
     # We'll decompress the body, trying to fix errors and ignoring them if we cannot
