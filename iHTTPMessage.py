@@ -100,7 +100,9 @@ class iHTTPMessage(object):
     sb0Body = None,
     s0Data = None,
     a0sbBodyChunks = None,
-    o0AdditionalHeaders = None
+    o0AdditionalHeaders = None,
+    bAddContentLengthHeader = True,
+    bCloseConnection = False,
   ):
     fAssertType("sbzVersion", sbzVersion, bytes, zNotProvided);
     fAssertType("o0zHeaders", o0zHeaders, cHTTPHeaders, None, zNotProvided); # None means no headers.
@@ -129,7 +131,11 @@ class iHTTPMessage(object):
     if sb0Body is not None:
       assert not bChunked, \
             "Cannot provide sb0Body (%s) with a \"Transfer-Encoded: Chunked\" header!" % repr(sb0Body);
-      oSelf.fSetBody(sb0Body);
+      oSelf.fSetBody(
+        sb0Body,
+        bAddContentLengthHeader = bAddContentLengthHeader,
+        bCloseConnection = bCloseConnection,
+      );
     else:
       oSelf.__sb0Body = None;
       if a0sbBodyChunks:

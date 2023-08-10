@@ -89,6 +89,8 @@ class cHTTPResponse(iHTTPMessage):
     s0Data = None,
     a0sbBodyChunks = None,
     o0AdditionalHeaders = None,
+    bAddContentLengthHeader = True,
+    bCloseConnection = False,
   ):
     oSelf.uStatusCode = fxGetFirstProvidedValue(uzStatusCode, oSelf.uDefaultStatusCode);
     oSelf.sbReasonPhrase = (
@@ -102,6 +104,8 @@ class cHTTPResponse(iHTTPMessage):
       s0Data = s0Data,
       a0sbBodyChunks = a0sbBodyChunks,
       o0AdditionalHeaders = o0AdditionalHeaders,
+      bAddContentLengthHeader = bAddContentLengthHeader,
+      bCloseConnection = bCloseConnection,
     );
   
   @property
