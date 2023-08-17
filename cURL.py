@@ -223,7 +223,7 @@ class cURL(object):
     if sb0Path is None:
       # If no path is provided, don't change the path in the clone.
       sbzPath = zNotProvided;
-    elif sb0Path[:1] == "/":
+    elif sb0Path[:1] == b"/":
       # If the path starts with "/", it is absolute.
       sbzPath = sb0Path;
     else:
