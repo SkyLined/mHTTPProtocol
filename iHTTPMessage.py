@@ -130,7 +130,7 @@ class iHTTPMessage(object):
     bChunked = oSelf.oHeaders.fbHasUniqueValueForName(b"Transfer-Encoding", b"Chunked");
     if sb0Body is not None:
       assert not bChunked, \
-            "Cannot provide sb0Body (%s) with a \"Transfer-Encoded: Chunked\" header!" % repr(sb0Body);
+            "Cannot provide sb0Body (%s) with a \"Transfer-Encoding: Chunked\" header!" % repr(sb0Body);
       oSelf.fSetBody(
         sb0Body,
         bAddContentLengthHeader = bAddContentLengthHeader,
@@ -140,7 +140,7 @@ class iHTTPMessage(object):
       oSelf.__sb0Body = None;
       if a0sbBodyChunks:
         assert bChunked, \
-              "Cannot provide a0sbBodyChunks (%s) without a \"Transfer-Encoded: Chunked\" header!" % repr(a0sbBodyChunks);
+              "Cannot provide a0sbBodyChunks (%s) without a \"Transfer-Encoding: Chunked\" header!" % repr(a0sbBodyChunks);
         oSelf.__a0sbBodyChunks = a0sbBodyChunks[:];
       elif s0Data is None:
         if bChunked:
