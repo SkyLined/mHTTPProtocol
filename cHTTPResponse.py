@@ -128,3 +128,15 @@ class cHTTPResponse(iHTTPMessage):
   def fsbGetStatusLine(oSelf):
     return b"%s %03d %s" % (oSelf.sbVersion, oSelf.__uStatusCode, oSelf.__sbReasonPhrase);
   
+  def foClone(oSelf):
+    return oSelf.__class__(
+      sbzVersion = oSelf.sbVersion,
+      uzStatusCode = oSelf.uStatusCode,
+      sbzReasonPhrase = oSelf.sbReasonPhrase,
+      o0zHeaders = oSelf.oHeaders.foClone(),
+      sb0Body = oSelf.sb0Body if not oSelf.bChunked else None,
+      a0sbBodyChunks = oSelf.asbBodyChunks if oSelf.bChunked else None,
+      o0AdditionalHeaders = oSelf.o0AdditionalHeaders,
+      bAddContentLengthHeader = False,
+      bCloseConnection = False,
+    );
