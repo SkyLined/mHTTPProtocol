@@ -79,7 +79,6 @@ class cHTTPRequest(iHTTPMessage):
     a0sbBodyChunks = None,
     o0AdditionalHeaders = None,
     bAddContentLengthHeader = True,
-    bCloseConnection = False,
   ):
     fAssertType("sbURL", sbURL, bytes);
     fAssertType("sbzMethod", sbzMethod, bytes, zNotProvided);
@@ -99,7 +98,7 @@ class cHTTPRequest(iHTTPMessage):
       a0sbBodyChunks = a0sbBodyChunks,
       o0AdditionalHeaders = o0AdditionalHeaders,
       bAddContentLengthHeader = bAddContentLengthHeader,
-      bCloseConnection = bCloseConnection,
+      bCloseConnection = False,
     );
   
   @property
