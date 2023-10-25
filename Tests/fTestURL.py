@@ -1,4 +1,4 @@
-from mHTTPConnection import cURL;
+from mHTTPProtocol import cURL;
 
 def fTestURL():
   cURL.foFromBytesString(b"http://0.1.2.3:12345/path?query#hash");

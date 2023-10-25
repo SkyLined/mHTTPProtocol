@@ -40,16 +40,29 @@ try:
   
   from fTestURL import fTestURL;
   from fTestCompression import fTestCompression;
+  from fTestRequest import fTestRequest;
+  from fTestResponse import fTestResponse;
   
   # Test URLs
   oConsole.fOutput("\u2500\u2500\u2500 Testing cURL ", sPadding = "\u2500");
   fTestURL();
   oConsole.fOutput("+ Done.");
+  
   # Test compression/decompression
   oConsole.fOutput("\u2500\u2500\u2500 Testing compression/decompression ", sPadding = "\u2500");
   fTestCompression();
   oConsole.fOutput("+ Done.");
   
+  # Test requests class
+  oConsole.fOutput("\u2500\u2500\u2500 Testing cHTTPRequest ", sPadding = "\u2500");
+  fTestRequest();
+  oConsole.fOutput("+ Done.");
+
+  # Test response class
+  oConsole.fOutput("\u2500\u2500\u2500 Testing cHTTPResponse ", sPadding = "\u2500");
+  fTestResponse();
+  oConsole.fOutput("+ Done.");
+
 except Exception as oException:
   if m0DebugOutput:
     m0DebugOutput.fTerminateWithException(oException, guExitCodeInternalError, bShowStacksForAllThread = True);
