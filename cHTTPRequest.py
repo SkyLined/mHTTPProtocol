@@ -129,9 +129,16 @@ class cHTTPRequest(iHTTPMessage):
   
   @ShowDebugOutput
   def foClone(oSelf):
-    if oSelf.bChunked:
-      return cHTTPRequest(oSelf.sbURL, oSelf.sbMethod, oSelf.sbVersion, oSelf.oHeaders.foClone(), a0sbBodyChunks = oSelf.a0sbBodyChunks);
-    return cHTTPRequest(oSelf.sbURL, oSelf.sbMethod, oSelf.sbVersion, oSelf.oHeaders.foClone(), sb0Body = oSelf.sb0Body);
+    return oSelf.__class__(
+      sbURL = oSelf.sbURL,
+      sbzMethod = oSelf.sbMethod,
+      sbzVersion = oSelf.sbVersion,
+      o0zHeaders = oSelf.oHeaders.foClone(),
+      sb0Body = oSelf.sb0Body if not oSelf.bChunked else None,
+      a0sbBodyChunks = oSelf.asbBodyChunks if oSelf.bChunked else None,
+      o0AdditionalHeaders = oSelf.o0AdditionalHeaders,
+      bAddContentLengthHeader = False,
+    );
   
   def fsbGetStatusLine(oSelf):
     return b"%s %s %s" % (oSelf.sbMethod, oSelf.sbURL, oSelf.sbVersion);
