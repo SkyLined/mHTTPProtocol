@@ -4,7 +4,7 @@ from mNotProvided import fAssertTypes;
 
 def fsbURLEncodedNameValuePairsToBytesString(dsValue_by_sName):
   fAssertTypes({
-    "dsValue_by_sName": (dsValue_by_sName, {str: str}),
+    "dsValue_by_sName": (dsValue_by_sName, dict),
   });
   asbData = [];
   for (sName, sValue) in dsValue_by_sName.items():
