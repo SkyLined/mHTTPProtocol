@@ -172,7 +172,7 @@ class cHTTPHeaders(object):
   
   def fasGetDetails(oSelf):
     return [s for s in [
-      "%d headers, %d lines" % (len(oSelf.__aoHeaders), len(oSelf.fasGetHeaderLines())),
+      "%d headers, %d lines" % (len(oSelf.__aoHeaders), len(oSelf.fasbGetHeaderLines())),
     ] if s];
   
   def __repr__(oSelf):
