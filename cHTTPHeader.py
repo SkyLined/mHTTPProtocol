@@ -2,8 +2,8 @@ from mNotProvided import fAssertType;
 
 class cHTTPHeader(object):
   def __init__(oSelf, sbName, *tsbValueLines):
-    oSelf.__sbLowerStippedName = None;
-    oSelf.__sbLowerStippedValue = None;
+    oSelf.__sbLowerName = None;
+    oSelf.__sbLowerValue = None;
     oSelf.__sbName = None;
     oSelf.__asbValueLines = None;
     oSelf.sbName = sbName;
@@ -22,9 +22,9 @@ class cHTTPHeader(object):
   
   @property
   def sbLowerName(oSelf):
-    if oSelf.__sbLowerStippedName is None:
-      oSelf.__sbLowerStippedName = oSelf.sbName.lower();
-    return oSelf.__sbLowerStippedName;
+    if oSelf.__sbLowerName is None:
+      oSelf.__sbLowerName = oSelf.sbName.lower();
+    return oSelf.__sbLowerName;
   
   @property
   def asbValueLines(oSelf):
@@ -62,9 +62,9 @@ class cHTTPHeader(object):
   
   @property
   def sbLowerValue(oSelf):
-    if oSelf.__sbLowerStippedValue is None:
-      oSelf.__sbLowerStippedValue = oSelf.sbValue.lower();
-    return oSelf.__sbLowerStippedValue;
+    if oSelf.__sbLowerValue is None:
+      oSelf.__sbLowerValue = oSelf.sbValue.lower();
+    return oSelf.__sbLowerValue;
   
   def foClone(oSelf):
     return oSelf.__class__(oSelf.__sbName, *oSelf.__asbValueLines);
