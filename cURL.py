@@ -6,7 +6,7 @@ from .fdsURLDecodedNameValuePairsFromBytesString import fdsURLDecodedNameValuePa
 from .fsbURLEncodedNameValuePairsToBytesString import fsbURLEncodedNameValuePairsToBytesString;
 from .mExceptions import cHTTPInvalidURLException, acExceptions;
 
-gdtxDefaultPortAndSecure_by_sbProtocol = {
+gdtxDefaultPortNumberAndSecure_by_sbProtocol = {
   b"http": (80, False),
   b"https": (443, True),
 };
@@ -24,11 +24,16 @@ gsbIPv4ByteRegExp = ( # No support for octal encoding!
     rb"[0-9]"                          # 0-9
   rb")"
 );
+grbIPv4Byte = re.compile(gsbIPv4ByteRegExp); # sanity check
 gsbIPv4AddressRegExp   = rb"(?:" + gsbIPv4ByteRegExp + rb"\." rb"){3}" + gsbIPv4ByteRegExp; # 0.1.2.3
+grbIPv4Address = re.compile(gsbIPv4AddressRegExp); # sanity check
 
 gsbIPv6WordRegExp      = rb"[0-9a-fA-F]{1,4}";
+grbIPv6Word = re.compile(gsbIPv6WordRegExp); # sanity check
 gsbIPv6PreWordRegExp   = rb"(?:" + gsbIPv6WordRegExp + rb"\:" rb")";
+grbIPv6PreWord = re.compile(gsbIPv6PreWordRegExp); # sanity check
 gsbIPv6PostWordRegExp   = rb"(?:" rb"\:" + gsbIPv6WordRegExp + rb")";
+grbIPv6PostWord = re.compile(gsbIPv6PostWordRegExp); # sanity check
 gsbIPv6AddressRegExp = (
   rb"(?:" 
     + gsbIPv6WordRegExp               + gsbIPv6PostWordRegExp + rb"{7}"      # A:B:C:D:E:F:G:H
@@ -84,67 +89,150 @@ gsbIPv6AddressRegExp = (
     + gsbIPv4AddressRegExp +            #
   rb")"
 );
-gsbDNSNameRegExp = (
-  rb"[A-Za-z0-9]"               # first char of hostname or lowest level domain name
-  rb"(?:"                       # optional {
-    rb"[A-Za-z0-9\-]{0,61}"     #   second till second-to-last additional char of hostname or lowest level domain name
-    rb"[A-Za-z0-9]"             #   last additional char of hostname or lowest level domain name
-  rb")?"                        # }
-  rb"(?:"                       # optional { (for fully qualified domain names)
-    rb"\."                      #   "."
-    rb"(?:"                     #   repeat {
-      rb"[A-Za-z0-9]"           #     first char of intermediate level domain name
-      rb"(?:"                   #     optional {
-        rb"[A-Za-z0-9\-]{0,61}" #    second till second-to-last additional char of intermediate level domain name
-        rb"[A-Za-z0-9]"         #       last additional char of intermediate level domain name
-      rb")?"                    #     }
-      rb"\."                    #     "."
-    rb")*"                      #   } any number of times
-    rb"[A-Za-z]{2,}"            #   top level domain name
-  rb")?"                        # }
-  rb"\.?"                       # a trailing dot is allowed.
-);
+grbIPv6Address = re.compile(gsbIPv6AddressRegExp); # sanity check
 
-gsbProtocolRegExp = rb"|".join([re.escape(sbProtocol) for sbProtocol in gdtxDefaultPortAndSecure_by_sbProtocol.keys()]);
-gsbHostnameRegExp = rb"|".join([gsbIPv4AddressRegExp, gsbIPv6AddressRegExp, rb"\[" + gsbIPv6AddressRegExp + rb"\]", gsbDNSNameRegExp]);
-# IPv6 addresses are enclosed in "[" and "]" in URLs to avoid cofusion with "host:port" separator
-gsbHostnameInURLRegExp = rb"|".join([gsbIPv4AddressRegExp, rb"\[" + gsbIPv6AddressRegExp + rb"\]", gsbDNSNameRegExp]);
-gsbPathRegExp     = rb"[^#?]*";
-gsbQueryRegExp    = rb"[^#]*";
+gsbDNSNameRegExp = (
+  rb"(?:"                               # treat as a single entity {
+    rb"[A-Za-z0-9]"                     #   first char of hostname or lowest level domain name
+    rb"(?:"                             #   optional {
+      rb"[A-Za-z0-9\-]{0,61}"           #     second till second-to-last additional char of hostname or lowest level domain name
+      rb"[A-Za-z0-9]"                   #     last additional char of hostname or lowest level domain name
+    rb")?"                              #   }
+    rb"(?:"                             #   optional { (for fully qualified domain names)
+      rb"\."                            #     "."
+      rb"(?:"                           #     repeat {
+        rb"[A-Za-z0-9]"                 #       first char of intermediate level domain name
+        rb"(?:"                         #       optional {
+          rb"[A-Za-z0-9\-]{0,61}"       #      second till second-to-last additional char of intermediate level domain name
+          rb"[A-Za-z0-9]"               #         last additional char of intermediate level domain name
+        rb")?"                          #       }
+        rb"\."                          #       "."
+      rb")*"                            #     } any number of times
+      rb"[A-Za-z]{2,}"                  #     top level domain name
+    rb")?"                              #   }
+    rb"\.?"                             #   a trailing dot is allowed.
+  rb")"                                 # }
+);
+grbDNSName = re.compile(gsbDNSNameRegExp); # sanity check
+
+gsbProtocolRegExp = (
+  rb"(?:" + rb"|".join([              #   any one of the known protocols
+    re.escape(sbProtocol)             #
+    for sbProtocol in gdtxDefaultPortNumberAndSecure_by_sbProtocol.keys()
+  ]) + rb")"                          #
+);
+grbProtocol = re.compile(gsbProtocolRegExp); # sanity check
+
+gsbUsernameRegExp = (
+  rb"(?:"                             #   repeat {
+    rb"[\w\-\.~!\$&'\(\)\*\+,;=]"     #     characters that do not need encoding
+  rb"|"                               #   } or {
+    rb"%[0-9A-F]{2}"                  #     percent-encoded character
+  rb")+"                              #   } at least once
+);
+grbUsername = re.compile(gsbUsernameRegExp); # sanity check
+
+# rfc3986 deprecates passwords but we offer backwards compatibility
+gsbPasswordRegExp = (
+  rb"(?:"                               # treat as a single entity {
+    rb"\b"                              #   cannot be preceded by certain chars.
+    rb"(?:"                             #   repeat {
+      rb"[\w\-\.~!\$&'\(\)\*\+,;=]"     #     characters that do not need encoding
+    rb"|"                               #   } or {
+      rb"%[0-9A-F]{2}"                  #     percent-encoded character
+    rb")*"                              #   } any number of times
+    rb"\b"                              #   cannot be followed by certain chars.
+  rb")"                                 # }
+);
+grbPassword = re.compile(gsbPasswordRegExp); # sanity check
+
+gsbHostRegExp = (                       # IPv6 can optionally be wrapped in square brackets.
+  rb"(?:" + rb"|".join([              #   one of the following {
+    gsbIPv4AddressRegExp,             #     <IPv4>
+    gsbIPv6AddressRegExp,             #     <IPv6>
+    rb"\[" + gsbIPv6AddressRegExp + rb"\]", # "[" <IPv6> "]"
+    gsbDNSNameRegExp,                 #     <DNS name>
+  ]) + rb")"                          #   }
+);
+grbHost = re.compile(gsbHostRegExp); # sanity check
+
+gsbHostInURLRegExp = (                  # URLs only allow IPv6 in square brackets to avoid confusion with ":<port number>".
+  rb"(?:"                               # treat as a single entity {
+    rb"(?:" + rb"|".join([              #   one of the following {
+      gsbIPv4AddressRegExp,             #     <IPv4>
+      rb"\[" + gsbIPv6AddressRegExp + rb"\]", # "[" <IPv6> "]"
+      gsbDNSNameRegExp,                 #     <DNS name>
+    ]) + rb")"                          #   }
+  rb")"                                 # }
+);
+grbHostInURL = re.compile(gsbHostInURLRegExp); # sanity check
+
+gsbPortNumberRegExp = (
+  rb"(?:"                               # treat as a single entity {
+    rb"\b"                              #   cannot be preceded by certain chars.
+    rb"0*"                              #   any number of preceding zeros
+    rb"(?:" + rb"|".join([              #   one of the following {
+      rb"\d{1,4}",                      #         0- 9999
+      rb"[1-5]\d{4}",                   #     10000-59999
+      rb"6[0-4]\d{3}",                  #     60000-64999
+      rb"65[0-4]\d{2}",                 #     65000-65499
+      rb"655[0-2]\d",                   #     65500-65520
+      rb"6553[0-5]",                    #     65530-65535
+    ]) + rb")"                          #   }
+    rb"\b"                              #   cannot be followed by certain chars.
+  rb")"                                 # }
+);
+grbPortNumber = re.compile(gsbPortNumberRegExp); # sanity check
+
+gsbPathRegExp     = rb"[A-Za-z0-9~!@$&*()_+\-=[\];'/:|,./]*";
+gsbQueryRegExp    = rb"[A-Za-z0-9`~!@$%^&*()_+\-={}[\]:|;\\,./?]*";
 gsbFragmentRegExp = rb".*";
 
-grbProtocol       = re.compile(rb"\A" + gsbProtocolRegExp + rb"\Z", re.I);
-grbHostname       = re.compile(rb"\A" + gsbHostnameRegExp + rb"\Z", re.I);
-grbIPv6Hostname   = re.compile(rb"\A" + gsbIPv6AddressRegExp + rb"\Z", re.I);
-grbPath           = re.compile(rb"\A\/?" + gsbPathRegExp + rb"\Z", re.I);
-grbQuery          = re.compile(rb"\A\??" + gsbQueryRegExp + rb"\Z", re.I);
-grbFragment       = re.compile(rb"\A#?" + gsbFragmentRegExp + rb"\Z", re.I);
+grbProtocol       = re.compile(rb"\A" + gsbProtocolRegExp + rb"\Z");
+grbUsername       = re.compile(rb"\A" + gsbUsernameRegExp + rb"\Z");
+grbPassword       = re.compile(rb"\A" + gsbPasswordRegExp + rb"\Z");
+grbHost           = re.compile(rb"\A" + gsbHostRegExp + rb"\Z");
+grbIPv6Address    = re.compile(rb"\A" + gsbIPv6AddressRegExp + rb"\Z");
+grbPath           = re.compile(rb"\A\/?" + gsbPathRegExp + rb"\Z");
+grbQuery          = re.compile(rb"\A\??" + gsbQueryRegExp + rb"\Z");
+grbFragment       = re.compile(rb"\A#?" + gsbFragmentRegExp + rb"\Z");
+
 grbURL = re.compile(
-  rb"\A"                                     # {
-  rb"(" + gsbProtocolRegExp + rb")://"      #   (protocol) "://"
-  rb"(" + gsbHostnameInURLRegExp + rb")"    #   (hostname)
-  rb"(?:" rb"\:(\d+)" rb")?"                #   ":" (port)
-  rb"(\/" + gsbPathRegExp + rb")?"          #   optional { ("/" path) }
-  rb"(?:\?(" + gsbQueryRegExp + rb"))?"     #   optional { "?" (query) }
-  rb"(?:\#(" + gsbFragmentRegExp + rb"))?"  #   optional { "#" (fragement) }
-  rb"\Z",                                    # }
-  re.I
+  rb"\A"                                    # start of string
+  rb"(" + gsbProtocolRegExp + rb")://"      # (protocol) "://"
+  rb"(?:"                                   # optional {
+    rb"(" + gsbUsernameRegExp + rb")"       #   (username)
+    rb"(?:"                                 #   optional {
+      rb"\:(" + gsbPasswordRegExp + rb")"   #    ":" (password)
+    rb")?"                                  #   }
+    rb"@"                                   #   "@"
+  rb")?"                                    # }
+  rb"(" + gsbHostInURLRegExp + rb")"        # (host)
+  rb"(?:"                                   # optional {
+    rb"\:(" + gsbPortNumberRegExp + rb")"   #   ":" (port number)
+  rb")?"                                    # }
+  rb"(\/" + gsbPathRegExp + rb")?"          # optional { ("/" path) }
+  rb"(?:\?(" + gsbQueryRegExp + rb"))?"     # optional { "?" (query) }
+  rb"(?:\#(" + gsbFragmentRegExp + rb"))?"  # optional { "#" (fragment) }
+  rb"\Z"                                    # end of string
 );
 grbRelativeURL = re.compile(
-  rb"\A"                                     # {
+  rb"\A"                                    # start of string
   rb"(" + gsbPathRegExp + rb")?"            #   optional { (path) }
   rb"(?:\?(" + gsbQueryRegExp + rb"))?"     #   optional { "?" (query) }
-  rb"(?:\#(" + gsbFragmentRegExp + rb"))?"  #   optional { "#" (fragement) }
-  rb"\Z",                                    # }
-  re.I
+  rb"(?:\#(" + gsbFragmentRegExp + rb"))?"  #   optional { "#" (fragment) }
+  rb"\Z"                                    # end of string
 );
 
 class cURL(object):
-  sbProtocolRegExp = gsbProtocolRegExp;
-  sbHostnameRegExp = gsbHostnameRegExp;
-  sbPathRegExp     = gsbPathRegExp;
-  sbQueryRegExp    = gsbQueryRegExp;
-  sbFragmentRegExp = gsbFragmentRegExp;
+  sbProtocolRegExp    = gsbProtocolRegExp;
+  sbUsernameRegExp    = gsbUsernameRegExp;
+  sbPasswordRegExp    = gsbPasswordRegExp;
+  sbHostRegExp        = gsbHostRegExp;
+  sbPortNumberRegExp  = gsbPortNumberRegExp;
+  sbPathRegExp        = gsbPathRegExp;
+  sbQueryRegExp       = gsbQueryRegExp;
+  sbFragmentRegExp    = gsbFragmentRegExp;
   
   @classmethod
   def foFromBytesString(cClass, sbURL):
@@ -155,23 +243,44 @@ class cURL(object):
         "Invalid URL",
         dxDetails = {"sbURL": sbURL},
       );
-    (sbProtocol, sbHostname, sb0Port, sb0Path, sb0Query, sb0Fragment) = oURLMatch.groups();
+    (
+      sbProtocol,
+      sb0Username,
+      sb0Password,
+      sbHost,
+      sb0PortNumber,
+      sb0Path,
+      sb0Query,
+      sb0Fragment,
+    ) = oURLMatch.groups();
     return cClass(
-      sbProtocol, sbHostname, int(sb0Port) if sb0Port else None,
+      sbProtocol = sbProtocol,
+      sb0Username = sb0Username,
+      sb0Password = sb0Password,
+      sbHost = sbHost,
+      u0PortNumber = int(sb0PortNumber) if sb0PortNumber else None,
       sb0Path = sb0Path,
       sb0Query = sb0Query,
       sb0Fragment = sb0Fragment,
     );
   
   def __init__(oSelf,
-    sbProtocol, sbHostname, u0PortNumber = None,
+    sbProtocol,
+    sbHost,
+    u0PortNumber = None,
     *,
+    sb0Username = None, s0URLDecodedUsername = None,
+    sb0Password = None, s0URLDecodedPassword = None,
     sb0Path = None, s0URLDecodedPath = None,
     sb0Query = None, s0URLDecodedQuery = None,
     sb0Fragment = None, s0URLDecodedFragment = None,
   ):
     fAssertType("sbProtocol", sbProtocol, bytes);
-    fAssertType("sbHostname", sbHostname, bytes);
+    fAssertType("sb0Username", sb0Username, bytes, None);
+    fAssertType("s0URLDecodedUsername", s0URLDecodedUsername, str, None);
+    fAssertType("sb0Password", sb0Password, bytes, None);
+    fAssertType("s0URLDecodedPassword", s0URLDecodedPassword, str, None);
+    fAssertType("sbHost", sbHost, bytes);
     fAssertType("u0PortNumber", u0PortNumber, int, None);
     fAssertType("sb0Path", sb0Path, bytes, None);
     fAssertType("s0URLDecodedPath", s0URLDecodedPath, str, None);
@@ -180,22 +289,39 @@ class cURL(object):
     fAssertType("sb0Fragment", sb0Fragment, bytes, None);
     fAssertType("s0URLDecodedFragment", s0URLDecodedFragment, str, None);
     oSelf.sbProtocol = sbProtocol;
-    oSelf.sbHostname = sbHostname;
-    assert u0PortNumber is None or isinstance(u0PortNumber, int), \
-        "u0PortNumber must be None, an int or a long, not %s" % repr(u0PortNumber);
+    
+    if s0URLDecodedUsername is not None:
+      assert sb0Username is None, \
+          "sb0Path and s0URLDecodedUsername cannot be provided together (%s and %s)" % (repr(sb0Path), repr(s0URLDecodedUsername));
+      oSelf.s0URLDecodedUsername = s0URLDecodedUsername;
+    else:
+      oSelf.sb0Username = sb0Username;
+    
+    if s0URLDecodedPassword is not None:
+      assert sb0Password is None, \
+          "sb0Path and s0URLDecodedPassword cannot be provided together (%s and %s)" % (repr(sb0Path), repr(s0URLDecodedPassword));
+      oSelf.s0URLDecodedPassword = s0URLDecodedPassword;
+    else:
+      oSelf.sb0Password = sb0Password;
+    
+    oSelf.sbHost = sbHost;
+    
     oSelf.__u0PortNumber = u0PortNumber;
+    
     if s0URLDecodedPath is not None:
       assert sb0Path is None, \
           "sb0Path and s0URLDecodedPath cannot be provided together (%s and %s)" % (repr(sb0Path), repr(s0URLDecodedPath));
       oSelf.sURLDecodedPath = s0URLDecodedPath;
     else:
       oSelf.sbPath = sb0Path;
+    
     if s0URLDecodedQuery is not None:
       assert sb0Query is None, \
           "sb0Query and s0URLDecodedQuery cannot be provided together (%s and %s)" % (repr(sb0Query), repr(s0URLDecodedQuery));
       oSelf.s0URLDecodedQuery = s0URLDecodedQuery;
     else:
       oSelf.sb0Query = sb0Query;
+    
     if s0URLDecodedFragment is not None:
       assert sb0Fragment is None, \
           "sb0Fragment and s0URLDecodedFragment cannot be provided together (%s and %s)" % (repr(sb0Fragment), repr(s0URLDecodedFragment));
@@ -265,15 +391,19 @@ class cURL(object):
     # All these can be provided to create a modified clone of the URL. If they
     # are not provided, the value from the original is used instead.
     sbzProtocol = zNotProvided,
-    sbzHostname = zNotProvided,
+    sb0zUsername = zNotProvided,
+    sb0zPassword = zNotProvided,
+    sbzHost = zNotProvided,
     u0zPortNumber = zNotProvided,
     sb0zPath = zNotProvided,
     sb0zQuery = zNotProvided,
     sb0zFragment = zNotProvided
   ):
     return cURL(
-      sbProtocol   = fxGetFirstProvidedValue(sbzProtocol, oSelf.__sbProtocol),
-      sbHostname   = fxGetFirstProvidedValue(sbzHostname, oSelf.__sbHostname),
+      sbProtocol   = fxGetFirstProvidedValue(sbzProtocol, oSelf.sbProtocol),
+      sb0Username  = fxGetFirstProvidedValue(sb0zUsername, oSelf.sb0Username),
+      sb0Password  = fxGetFirstProvidedValue(sb0zPassword, oSelf.sb0Password),
+      sbHost       = fxGetFirstProvidedValue(sbzHost, oSelf.sbHost),
       u0PortNumber = fxGetFirstProvidedValue(u0zPortNumber, oSelf.__u0PortNumber),
       sb0Path      = fxGetFirstProvidedValue(sb0zPath, oSelf.__sbPath),
       sb0Query     = fxGetFirstProvidedValue(sb0zQuery, oSelf.__sb0Query),
@@ -293,24 +423,64 @@ class cURL(object):
   
   @property
   def bSecure(oSelf):
-    return gdtxDefaultPortAndSecure_by_sbProtocol[oSelf.__sbProtocol][1];
+    return gdtxDefaultPortNumberAndSecure_by_sbProtocol[oSelf.__sbProtocol][1];
   
-  ### Hostname #################################################################
+  ### Username #################################################################
+  # username getter and setter
   @property
-  def sbHostname(oSelf):
-    return oSelf.__sbHostname;
-  @sbHostname.setter
-  def sbHostname(oSelf, sbHostname):
-    fAssertType("sbHostname", sbHostname, bytes);
-    assert grbHostname.match(sbHostname), \
-        "sbHostname is not a valid hostname (%s)" % (repr(sbHostname),);
-    # IPv6 hostnames can be wrapped in "[]"; we remove these:
-    oSelf.__sbHostname = sbHostname if sbHostname[0] != "[" else sbHostname[1:-1];
+  def sb0Username(oSelf):
+    return oSelf.__sb0Username;
+  @sb0Username.setter
+  def sb0Username(oSelf, sb0Username):
+    fAssertType("sb0Username", sb0Username, bytes, None);
+    if sb0Username is not None:
+      assert grbUsername.match(sb0Username), \
+          "sb0Username is not a valid Username (%s)" % (repr(sb0Username),);
+    oSelf.__sb0Username = sb0Username;
+  # URL decoded username getter and setter
+  @property
+  def sURLDecodedUsername(oSelf):
+    return urllib.parse.unquote(oSelf.__sb0Username) if oSelf.__sb0Username is not None else None;
+  @sURLDecodedUsername.setter
+  def sURLDecodedUsername(oSelf, sURLDecodedUsername):
+    oSelf.__sb0Username = bytes(urllib.parse.quote(sURLDecodedUsername), "ascii", "strict");
+  
+  ### Password #################################################################
+  # password getter and setter
+  @property
+  def sb0Password(oSelf):
+    return oSelf.__sb0Password;
+  @sb0Password.setter
+  def sb0Password(oSelf, sb0Password):
+    fAssertType("sb0Password", sb0Password, bytes, None);
+    if sb0Password is not None:
+      assert grbPassword.match(sb0Password), \
+          "sb0Password is not a valid Password (%s)" % (repr(sb0Password),);
+    oSelf.__sb0Password = sb0Password;
+  # URL decoded password getter and setter
+  @property
+  def sURLDecodedPassword(oSelf):
+    return urllib.parse.unquote(oSelf.__sb0Password) if oSelf.__sb0Password is not None else None;
+  @sURLDecodedPassword.setter
+  def sURLDecodedPassword(oSelf, sURLDecodedPassword):
+    oSelf.__sb0Password = bytes(urllib.parse.quote(sURLDecodedPassword), "ascii", "strict");
+  
+  ### Host #####################################################################
+  @property
+  def sbHost(oSelf):
+    return oSelf.__sbHost;
+  @sbHost.setter
+  def sbHost(oSelf, sbHost):
+    fAssertType("sbHost", sbHost, bytes);
+    assert grbHost.match(sbHost), \
+        "sbHost is not valid (%s)" % (repr(sbHost),);
+    # IPv6 addresses can optionally be wrapped in "[]"; we remove these:
+    oSelf.__sbHost = sbHost if sbHost[0] != "[" else sbHost[1:-1];
   
   ### Port #####################################################################
   @property
   def uPortNumber(oSelf):
-    return oSelf.__u0PortNumber if oSelf.__u0PortNumber is not None else gdtxDefaultPortAndSecure_by_sbProtocol[oSelf.__sbProtocol][0];
+    return oSelf.__u0PortNumber if oSelf.__u0PortNumber is not None else gdtxDefaultPortNumberAndSecure_by_sbProtocol[oSelf.__sbProtocol][0];
   @property
   def u0PortNumber(oSelf):
     return oSelf.__u0PortNumber;
@@ -420,25 +590,41 @@ class cURL(object):
   ### Convenience ##############################################################
   @property
   def sbAddress(oSelf):
-    return (b"[%s]:%d" if grbIPv6Hostname.match(oSelf.__sbHostname) else b"%s:%d") % \
-        (oSelf.__sbHostname, oSelf.uPortNumber);
-  
+    if grbIPv6Address.match(oSelf.__sbHost):
+      return b"[%s]:%d" % (oSelf.__sbHost, oSelf.uPortNumber);
+    return b"%s:%d" % (oSelf.__sbHost, oSelf.uPortNumber);
+
   @property
-  def sbHostnameAndOptionalPort(oSelf):
-    bNonDefaultPortNumber = oSelf.__u0PortNumber not in [None, gdtxDefaultPortAndSecure_by_sbProtocol[oSelf.__sbProtocol][0]];
-    return (
-      b"[%s]" % oSelf.__sbHostname if grbIPv6Hostname.match(oSelf.__sbHostname) else oSelf.__sbHostname
-    ) + (
-      b":%d" % oSelf.__u0PortNumber if bNonDefaultPortNumber else b""
-    );
+  def sbHostAndOptionalPort(oSelf):
+    sbHostAndOptionalPort = b"";
+    if grbIPv6Address.match(oSelf.__sbHost):
+      sbHostAndOptionalPort += b"[%s]" % oSelf.__sbHost;
+    else:
+      sbHostAndOptionalPort += oSelf.__sbHost;
+    
+    if oSelf.__u0PortNumber not in [None, gdtxDefaultPortNumberAndSecure_by_sbProtocol[oSelf.__sbProtocol][0]]:
+      sbHostAndOptionalPort += b":%d" % oSelf.__u0PortNumber;
+    return sbHostAndOptionalPort;
+
+  @property
+  def sbAuthority(oSelf):
+    if oSelf.__sb0Username is None and oSelf.__sb0Password is None:
+      sbUserInfo = b""; # some components are optional, we'll add them as needed:
+    else:
+      sbUserInfo = oSelf.__sb0Username or b"";
+      if oSelf.__sb0Password is not None:
+        sbUserInfo += b":" + oSelf.__sb0Password;
+      sbUserInfo += b"@";
+    return sbUserInfo + oSelf.sbHostAndOptionalPort;
   
   @property
   def oBase(oSelf):
-    return cURL(sbProtocol = oSelf.__sbProtocol, sbHostname = oSelf.__sbHostname, u0PortNumber = oSelf.__u0PortNumber);
+    return cURL(sbProtocol = oSelf.__sbProtocol, sbHost = oSelf.__sbHost, u0PortNumber = oSelf.__u0PortNumber);
   
   @property
   def sbBase(oSelf):
-    return b"%s://%s" % (oSelf.__sbProtocol, oSelf.sbHostnameAndOptionalPort);
+    return b"%s://%s" % (oSelf.__sbProtocol, oSelf.sbHostAndOptionalPort);
+  
   @property
   def sbOrigin(oSelf):
     return b"%s://%s" % (oSelf.__sbProtocol, oSelf.sbAddress);
@@ -460,7 +646,9 @@ class cURL(object):
   def fasDump(oSelf):
     return [
       "sbProtocol: %s" % repr(oSelf.__sbProtocol),
-      "sbHostname: %s" % repr(oSelf.__sbHostname),
+      "sb0Username: %s" % repr(oSelf.__sb0Username),
+      "sb0Password: %s" % repr(oSelf.__sb0Password),
+      "sbHost: %s" % repr(oSelf.__sbHost),
       "u0PortNumber: %s" % repr(oSelf.__u0PortNumber),
       "sbPath: %s" % repr(oSelf.__sbPath),
       "sb0Query: %s" % repr(oSelf.__sb0Query),
@@ -471,16 +659,24 @@ class cURL(object):
     return "%s{%s}" % (oSelf.__class__.__name__, str(oSelf.sbAbsolute, 'ascii', 'strict'));
   
   def __repr__(oSelf):
-    return "<%s.%s %s://%s%s%s%s%s>" % (
+    return "".join([
+      "<",
       oSelf.__class__.__module__,
+      ".",
       oSelf.__class__.__name__,
+      " ",
       repr(oSelf.__sbProtocol),
-      repr(oSelf.__sbHostname),
+      "://",
+      ("%s%s@" % (
+        repr(oSelf.__sb0Username) if oSelf.__sb0Username is not None else "",
+        (":%s" % repr(oSelf.__sb0Password)) if oSelf.__sb0Password is not None else "",
+      )) if oSelf.__sb0Username is not None or oSelf.__sb0Password is not None else "",
+      repr(oSelf.__sbHost),
       (":%s" % repr(oSelf.__u0PortNumber)) if oSelf.__u0PortNumber is not None else "",
       repr(oSelf.__sbPath),
       ("?%s" % repr(oSelf.__sb0Query)) if oSelf.__sb0Query is not None else "",
       ("#%s" % repr(oSelf.__sb0Fragment)) if oSelf.__sb0Fragment is not None else "",
-    );
+    ]);
   
 for cException in acExceptions:
   setattr(cURL, cException.__name__, cException);
