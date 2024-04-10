@@ -1,4 +1,4 @@
-import base64, zlib;
+import zlib;
 
 guDeflateCompressionLevel = zlib.Z_DEFAULT_COMPRESSION;
 guGZipCompressionLevel = zlib.Z_DEFAULT_COMPRESSION;

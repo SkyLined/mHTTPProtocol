@@ -1,7 +1,7 @@
 import re, urllib.parse;
 
 try: # mDebugOutput use is Optional
-  from mDebugOutput import ShowDebugOutput, fShowDebugOutput;
+  from mDebugOutput import ShowDebugOutput;
 except ModuleNotFoundError as oException:
   if oException.args[0] != "No module named 'mDebugOutput'":
     raise;

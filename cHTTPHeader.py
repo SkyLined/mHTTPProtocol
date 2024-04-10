@@ -1,12 +1,4 @@
-try: # mDebugOutput use is Optional
-  from mDebugOutput import ShowDebugOutput, fShowDebugOutput;
-except ModuleNotFoundError as oException:
-  if oException.args[0] != "No module named 'mDebugOutput'":
-    raise;
-  ShowDebugOutput = lambda fx: fx; # NOP
-  fShowDebugOutput = lambda x, s0 = None: x; # NOP
-
-from mNotProvided import *;
+from mNotProvided import fAssertType;
 
 class cHTTPHeader(object):
   def __init__(oSelf, sbName, *tsbValueLines):
