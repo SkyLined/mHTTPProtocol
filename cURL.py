@@ -184,7 +184,7 @@ gsbPortNumberRegExp = (
 );
 grbPortNumber = re.compile(gsbPortNumberRegExp); # sanity check
 
-gsbPathRegExp     = rb"[A-Za-z0-9~!@$&*()_+\-=[\];'/:|,./]*";
+gsbPathRegExp     = rb"[A-Za-z0-9~!@$%&*()_+\-=[\];'/:|,./]*";
 gsbQueryRegExp    = rb"[A-Za-z0-9`~!@$%^&*()_+\-={}[\]:|;\\,./?]*";
 gsbFragmentRegExp = rb".*";
 
