@@ -148,6 +148,10 @@ class iHTTPMessage(object):
           oSelf.__a0sbBodyChunks = [];
       else:
         oSelf.fSetData(s0Data);
+      if bAddContentLengthHeader:
+        assert not bChunked, \
+              "Cannot provide bAddContentLengthHeader=True with a \"Transfer-Encoding: Chunked\" header!";
+        oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Length", b"%d" % len(oSelf.__sb0Body or b""));
         
     oSelf.o0AdditionalHeaders = o0AdditionalHeaders;
     # The sender can tell us the body is compressed using one algorithm but
