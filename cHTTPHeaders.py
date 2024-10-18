@@ -88,7 +88,9 @@ class cHTTPHeaders(object):
   
   def foAddHeaderForNameAndValue(oSelf, sbName, sbValue):
     fShowDebugOutput("Adding %s:%s header." % (repr(sbName), repr(sbValue)));
-    oSelf.__aoHeaders.append(cHTTPHeader(sbName, sbValue));
+    oHeader = cHTTPHeader(sbName, sbValue);
+    oSelf.__aoHeaders.append(oHeader);
+    return oHeader;
   
   @ShowDebugOutput
   def fbHasValueForName(oSelf, sbName, sb0Value = None):
