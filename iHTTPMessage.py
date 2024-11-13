@@ -8,11 +8,12 @@ except ModuleNotFoundError as oException:
   ShowDebugOutput = lambda fx: fx; # NOP
   fShowDebugOutput = lambda x, s0 = None: x; # NOP
 
-from mNotProvided import \
-    fAssertType, \
-    fbIsProvided, \
-    fxGetFirstProvidedValue, \
-    zNotProvided;
+from mNotProvided import (
+  fAssertType,
+  fbIsProvided,
+  fxGetFirstProvidedValue,
+  zNotProvided,
+);
 
 from .cHTTPHeaders import cHTTPHeaders;
 from .fdsURLDecodedNameValuePairsFromString import fdsURLDecodedNameValuePairsFromString;
@@ -101,7 +102,7 @@ class iHTTPMessage(object):
     s0Data = None,
     a0sbBodyChunks = None,
     o0AdditionalHeaders = None,
-    bAddContentLengthHeader = True,
+    bAddContentLengthHeader = False,
     bCloseConnection = False,
   ):
     fAssertType("sbzVersion", sbzVersion, bytes, zNotProvided);
@@ -304,7 +305,7 @@ class iHTTPMessage(object):
   def fSetData(oSelf,
     sData,
     *,
-    bAddContentLengthHeader = True,
+    bAddContentLengthHeader = False,
     bCloseConnection = False,
     o0Connection = None,
   ):
@@ -416,7 +417,7 @@ class iHTTPMessage(object):
   def fApplyCompressionAndSetBody(oSelf,
     sbData,
     *,
-    bAddContentLengthHeader = True,
+    bAddContentLengthHeader = False,
     bCloseConnection = False,
   ):
     fAssertType("sbData", sbData, bytes);
@@ -445,7 +446,7 @@ class iHTTPMessage(object):
   def fSetBody(oSelf,
     sb0Body,
     *,
-    bAddContentLengthHeader = True,
+    bAddContentLengthHeader = False,
     bCloseConnection = False,
   ):
     oSelf.oHeaders.fbRemoveHeadersForName(b"Transfer-Encoding");

@@ -42,8 +42,8 @@ class cHTTPHeader(object):
   
   def fAddValueLine(oSelf, sbValueLine):
     fAssertType("sbValueLine", sbValueLine, bytes);
-    assert len(sbValueLine) > 0, \
-        "HTTP header values must contain a value";
+#    assert len(sbValueLine) > 0, \
+#        "HTTP header values must contain a value";
     assert len(oSelf.__asbValueLines) == 0 or sbValueLine[0] in b" \t", \
         "HTTP header value lines after the first must start with whitespace, not %s" % repr(sbValueLine);
     oSelf.__asbValueLines.append(sbValueLine);

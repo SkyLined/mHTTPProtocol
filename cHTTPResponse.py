@@ -6,11 +6,12 @@ except ModuleNotFoundError as oException:
   ShowDebugOutput = lambda fx: fx; # NOP
   fShowDebugOutput = lambda x, s0 = None: x; # NOP
 
-from mNotProvided import \
-    fAssertType, \
-    fbIsProvided, \
-    fxGetFirstProvidedValue, \
-    zNotProvided;
+from mNotProvided import (
+  fAssertType,
+  fbIsProvided,
+  fxGetFirstProvidedValue,
+  zNotProvided
+);
 
 from .dsbHTTPCommonReasonPhrase_by_uStatusCode import dsbHTTPCommonReasonPhrase_by_uStatusCode;
 from .iHTTPMessage import iHTTPMessage;
@@ -88,8 +89,8 @@ class cHTTPResponse(iHTTPMessage):
     sb0Body = None,
     s0Data = None,
     a0sbBodyChunks = None,
+    bAddContentLengthHeader = False,
     o0AdditionalHeaders = None,
-    bAddContentLengthHeader = True,
     bCloseConnection = False,
   ):
     oSelf.uStatusCode = fxGetFirstProvidedValue(uzStatusCode, oSelf.uDefaultStatusCode);
@@ -103,8 +104,8 @@ class cHTTPResponse(iHTTPMessage):
       sb0Body = sb0Body,
       s0Data = s0Data,
       a0sbBodyChunks = a0sbBodyChunks,
-      o0AdditionalHeaders = o0AdditionalHeaders,
       bAddContentLengthHeader = bAddContentLengthHeader,
+      o0AdditionalHeaders = o0AdditionalHeaders,
       bCloseConnection = bCloseConnection,
     );
   

@@ -8,10 +8,12 @@ except ModuleNotFoundError as oException:
   ShowDebugOutput = lambda fx: fx; # NOP
   fShowDebugOutput = lambda x, s0 = None: x; # NOP
 
-from mNotProvided import \
-  fAssertType, \
-  fxGetFirstProvidedValue, \
-  zNotProvided;
+from mNotProvided import (
+  fAssertType,
+  fAssertTypes,
+  fxGetFirstProvidedValue,
+  zNotProvided
+);
 
 from .cHTTPHeaders import cHTTPHeaders;
 from .cHTTPResponse import cHTTPResponse;
@@ -77,17 +79,20 @@ class cHTTPRequest(iHTTPMessage):
     sb0Body = None,
     s0Data = None,
     a0sbBodyChunks = None,
+    bAddContentLengthHeader = False,
     o0AdditionalHeaders = None,
-    bAddContentLengthHeader = True,
   ):
-    fAssertType("sbURL", sbURL, bytes);
-    fAssertType("sbzMethod", sbzMethod, bytes, zNotProvided);
-    fAssertType("sbzVersion", sbzVersion, bytes, zNotProvided);
-    fAssertType("o0zHeaders", o0zHeaders, cHTTPHeaders, None, zNotProvided);
-    fAssertType("sb0Body", sb0Body, bytes, None);
-    fAssertType("s0Data", s0Data, str, None);
-    fAssertType("a0sbBodyChunks", a0sbBodyChunks, [bytes], None);
-    fAssertType("o0AdditionalHeaders", o0AdditionalHeaders, cHTTPHeaders, None);
+    fAssertTypes({
+      "sbURL": (sbURL, bytes),
+      "sbzMethod": (sbzMethod, bytes, zNotProvided),
+      "sbzVersion": (sbzVersion, bytes, zNotProvided),
+      "o0zHeaders": (o0zHeaders, cHTTPHeaders, None, zNotProvided),
+      "sb0Body": (sb0Body, bytes, None),
+      "s0Data": (s0Data, str, None),
+      "a0sbBodyChunks": (a0sbBodyChunks, [bytes], None),
+      "bAddContentLengthHeader": (bAddContentLengthHeader, bool),
+      "o0AdditionalHeaders": (o0AdditionalHeaders, cHTTPHeaders, None),
+    });
     oSelf.__sbURL = sbURL;
     oSelf.__sbMethod = fxGetFirstProvidedValue(sbzMethod, b"POST" if (sb0Body or s0Data or a0sbBodyChunks) else b"GET");
     iHTTPMessage.__init__(oSelf,
@@ -96,8 +101,8 @@ class cHTTPRequest(iHTTPMessage):
       sb0Body = sb0Body,
       s0Data = s0Data,
       a0sbBodyChunks = a0sbBodyChunks,
-      o0AdditionalHeaders = o0AdditionalHeaders,
       bAddContentLengthHeader = bAddContentLengthHeader,
+      o0AdditionalHeaders = o0AdditionalHeaders,
       bCloseConnection = False,
     );
   
@@ -152,10 +157,10 @@ class cHTTPRequest(iHTTPMessage):
     sb0Body = None,
     s0Data = None,
     a0sbBodyChunks = None,
+    bAddContentLengthHeader = False,
     sb0Charset = None,
     o0AdditionalHeaders = None,
     sb0MediaType = None,
-    bAddContentLengthHeader = True,
     bCloseConnection = False,
   ):
     oResponse = cHTTPResponse(
@@ -166,8 +171,8 @@ class cHTTPRequest(iHTTPMessage):
       sb0Body = sb0Body,
       s0Data = s0Data,
       a0sbBodyChunks = a0sbBodyChunks,
-      o0AdditionalHeaders = o0AdditionalHeaders,
       bAddContentLengthHeader = bAddContentLengthHeader,
+      o0AdditionalHeaders = o0AdditionalHeaders,
       bCloseConnection = bCloseConnection,
     );
     if sb0MediaType or sb0Body or s0Data or a0sbBodyChunks:
