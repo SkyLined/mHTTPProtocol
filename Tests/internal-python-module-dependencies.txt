@@ -17,3 +17,4 @@ threading
 token
 tokenize
 urllib
+weakref
