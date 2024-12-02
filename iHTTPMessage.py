@@ -232,19 +232,6 @@ class iHTTPMessage(object):
   
   @property
   @ShowDebugOutput
-  def bIndicatesConnectionShouldBeClosed(oSelf):
-    o0ConnectionHeader = oSelf.oHeaders.fo0GetUniqueHeaderForName(b"Connection");
-    if o0ConnectionHeader:
-      for sbTokenWithOptionalWhitespace in o0ConnectionHeader.sbValue.split(b","):
-        sbLowercaseToken = sbTokenWithOptionalWhitespace.strip().lower();
-        if sbLowercaseToken == b"close":
-          return True;
-    if oSelf.sbVersion == b"HTTP/1.1":
-      return False;
-    return True;
-
-  @property
-  @ShowDebugOutput
   def bCompressed(oSelf):
     for sCompressionType in oSelf.asbCompressionTypes or []:
       if sCompressionType.lower() != "identity":
@@ -568,6 +555,16 @@ class iHTTPMessage(object):
     sbBase64EncodedUserNameColonPassword = base64.b64encode("%s:%s" % (sbUserName, sbPassword));
     oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Authorization", b"basic %s" % sbBase64EncodedUserNameColonPassword);
   
+  def fbContainsConnectionCloseHeader(oSelf):
+    # TODO: It is not clear if "close" can be part of a list of tokens
+    # or must be provided as the only value for the header. I am
+    # implementing this as if it can be part of a list of tokens.
+    for oHeader in oSelf.oHeaders.faoGetHeadersForName(b"Connection"):
+      for sLowerToken in oHeader.sbLowerValue.split(b","):
+        if sLowerToken == b"close":
+          return True;
+    return False;
+
   def fsbSerialize(oSelf):
     return b"\r\n".join([
       oSelf.fsbGetStatusLine(),
