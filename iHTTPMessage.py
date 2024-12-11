@@ -1,4 +1,4 @@
-import base64;
+import base64, json;
 
 try: # mDebugOutput use is Optional
   from mDebugOutput import ShowDebugOutput, fShowDebugOutput;
@@ -491,7 +491,7 @@ class iHTTPMessage(object):
       return None;
     s0Data = oSelf.s0Data;
     return fdsURLDecodedNameValuePairsFromString(s0Data) if s0Data else {};
-  
+
   @ShowDebugOutput
   def fs0GetFormValue(oSelf, sName):
     # convert the decoded and decompressed body to form name-value pairs and return the value for the given name
@@ -509,7 +509,7 @@ class iHTTPMessage(object):
   @ShowDebugOutput
   def fSetFormValue(oSelf, sName, s0Value):
     # Convert the decoded and decompressed body to form name-value pairs,
-    # remove all existing values with the given name,
+    # remove all existing values with the given name (case-insensitive),
     # if the value is not None, add the new named value,
     # and update the optionally compressed body to match.
     sLowerStrippedName = sName.lower();
@@ -524,8 +524,54 @@ class iHTTPMessage(object):
         del dForm_sValue_by_sName[sOtherName];
     if s0Value is not None:
       dForm_sValue_by_sName[sName] = s0Value;
-    oSelf.fApplyCompressionAndSetBody(fsbURLEncodedNameValuePairsToBytesString(dForm_sValue_by_sName));
+    sBody = fsbURLEncodedNameValuePairsToBytesString(dForm_sValue_by_sName);
+    oSelf.fApplyCompressionAndSetBody(sBody);
+
+  # application/json
+  @property
+  @ShowDebugOutput
+  def d0JSON_sValue_by_sName(oSelf):
+    # convert the decoded and decompressed body to form name-value pairs.
+    sb0MediaType = oSelf.sb0MediaType;
+    if sb0MediaType is None or sb0MediaType.lower() != b"application/json":
+      return None;
+    s0Data = oSelf.s0Data;
+    if s0Data is None:
+      return None;
+    try:
+      xJSONData = json.parse(s0Data);
+    except ValueError:
+      return None;
+    if not isinstance(xJSONData, dict):
+      return None;
+    return xJSONData;
+
+  @ShowDebugOutput
+  def fs0GetJSONValue(oSelf, sName):
+    # convert the decoded and decompressed body to form name-value pairs and return the value for the given name
+    # or None if there is no such value.
+    d0JSON_sValue_by_sName = oSelf.d0JSON_sValue_by_sName;
+    if d0JSON_sValue_by_sName is None or not isinstance(dForm_sValue_by_sName, dict):
+      return None;
+    dForm_sValue_by_sName = d0JSON_sValue_by_sName;
+    return dForm_sValue_by_sName.get(sName);
   
+  @ShowDebugOutput
+  def fSetJSONValue(oSelf, sName, xValue):
+    # Convert the decoded and decompressed body to form name-value pairs,
+    # remove all existing values with the given name,
+    # if the value is not None, add the new named value,
+    # and update the optionally compressed body to match.
+    d0JSON_sValue_by_sName = oSelf.d0JSON_sValue_by_sName;
+    if d0JSON_sValue_by_sName is None:
+      oSelf.sb0MediaType = b"application/json; charset=utf-8";
+      dJSON_sValue_by_sName = {};
+    else:
+      dJSON_sValue_by_sName = d0JSON_sValue_by_sName;
+    dJSON_sValue_by_sName[sName] = xValue;
+    sBody = json.stringify(dJSON_sValue_by_sName);
+    oSelf.fApplyCompressionAndSetBody(sBody);
+
   @ShowDebugOutput
   def fRemoveFormValue(oSelf, sName):
     oSelf.fSetFormValue(sName, None);
