@@ -13,8 +13,10 @@ math
 opcode
 platform
 struct
+textwrap
 threading
 token
 tokenize
+traceback
 urllib
 weakref
