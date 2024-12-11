@@ -5,16 +5,25 @@ from .cHTTPResponse import cHTTPResponse;
 from .cURL import cURL;
 from .fs0GetExtensionForMediaType import fs0GetExtensionForMediaType;
 from .fsb0GetMediaTypeForExtension import fsb0GetMediaTypeForExtension;
-from . import mExceptions;
+from .mExceptions import (
+  cHTTPInvalidMessageException,
+  cHTTPInvalidEncodedDataException,
+  cHTTPInvalidURLException,
+  cHTTPProtocolException,
+  cHTTPUnhandledCharsetException,
+);
 
 __all__ = [
   "cHTTPHeader",
   "cHTTPHeaders",
+  "cHTTPInvalidMessageException",
+  "cHTTPInvalidEncodedDataException",
+  "cHTTPInvalidURLException",
+  "cHTTPProtocolException",
   "cHTTPRequest",
   "cHTTPResponse",
+  "cHTTPUnhandledCharsetException",
   "cURL",
   "fs0GetExtensionForMediaType",
   "fsb0GetMediaTypeForExtension",
-  "mExceptions",
-  
 ];

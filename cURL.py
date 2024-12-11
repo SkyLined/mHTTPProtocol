@@ -4,7 +4,9 @@ from mNotProvided import fAssertType, fbIsProvided, fxGetFirstProvidedValue, zNo
 
 from .fdsURLDecodedNameValuePairsFromBytesString import fdsURLDecodedNameValuePairsFromBytesString;
 from .fsbURLEncodedNameValuePairsToBytesString import fsbURLEncodedNameValuePairsToBytesString;
-from .mExceptions import cHTTPInvalidURLException, acExceptions;
+from .mExceptions import (
+  cHTTPInvalidURLException
+);
 
 gdtxDefaultPortNumberAndSecure_by_sbProtocol = {
   b"http": (80, False),
@@ -677,6 +679,3 @@ class cURL(object):
       ("?%s" % repr(oSelf.__sb0Query)) if oSelf.__sb0Query is not None else "",
       ("#%s" % repr(oSelf.__sb0Fragment)) if oSelf.__sb0Fragment is not None else "",
     ]);
-  
-for cException in acExceptions:
-  setattr(cURL, cException.__name__, cException);

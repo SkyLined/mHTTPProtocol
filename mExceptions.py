@@ -1,4 +1,4 @@
-class cHTTPException(Exception):
+class cHTTPProtocolException(Exception):
   def __init__(oSelf, sMessage, *, o0Connection = None, dxDetails = None):
     assert isinstance(dxDetails, dict), \
         "dxDetails must be a dict, not %s" % repr(dxDetails);
@@ -17,7 +17,11 @@ class cHTTPException(Exception):
   def __repr__(oSelf):
     return "<%s.%s %s>" % (oSelf.__class__.__module__, oSelf.__class__.__name__, oSelf);
 
-class cHTTPInvalidMessageException(cHTTPException):
+class cHTTPInvalidURLException(cHTTPProtocolException):
+  # Indicates that data does not contain a valid HTTP URL.
+  pass;
+
+class cHTTPInvalidMessageException(cHTTPProtocolException):
   # Indicates that data does not contain a valid HTTP Message.
   pass;
 
@@ -36,19 +40,10 @@ class cHTTPUnhandledCharsetException(cHTTPInvalidMessageException):
   # body.
   pass;
 
-class cHTTPInvalidURLException(cHTTPException):
-  # Indicates that data does not contain a valid HTTP URL.
-  pass;
-
-class cHTTPMaxConnectionsToServerReachedException(cHTTPException):
-  # Indicates the client would need to create more connections to the server than allowed.
-  pass;
-
-acExceptions = [
-  cHTTPException,
-  cHTTPInvalidMessageException,
-  cHTTPInvalidEncodedDataException,
-  cHTTPUnhandledCharsetException,
-  cHTTPInvalidURLException,
-  cHTTPMaxConnectionsToServerReachedException,
+__all__ = [
+  "cHTTPInvalidMessageException",
+  "cHTTPInvalidEncodedDataException",
+  "cHTTPInvalidURLException",
+  "cHTTPProtocolException",
+  "cHTTPUnhandledCharsetException",
 ];
