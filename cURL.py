@@ -670,12 +670,12 @@ class cURL(object):
       repr(oSelf.__sbProtocol),
       "://",
       ("%s%s@" % (
-        repr(oSelf.__sb0Username) if oSelf.__sb0Username is not None else "",
-        (":%s" % repr(oSelf.__sb0Password)) if oSelf.__sb0Password is not None else "",
+        repr(oSelf.__sb0Username)[1:] if oSelf.__sb0Username is not None else "",
+        (":%s" % repr(oSelf.__sb0Password)[1:]) if oSelf.__sb0Password is not None else "",
       )) if oSelf.__sb0Username is not None or oSelf.__sb0Password is not None else "",
-      repr(oSelf.__sbHost),
+      repr(oSelf.__sbHost)[1:],
       (":%s" % repr(oSelf.__u0PortNumber)) if oSelf.__u0PortNumber is not None else "",
-      repr(oSelf.__sbPath),
-      ("?%s" % repr(oSelf.__sb0Query)) if oSelf.__sb0Query is not None else "",
-      ("#%s" % repr(oSelf.__sb0Fragment)) if oSelf.__sb0Fragment is not None else "",
+      repr(oSelf.__sbPath)[1:],
+      ("?%s" % repr(oSelf.__sb0Query)[1:]) if oSelf.__sb0Query is not None else "",
+      ("#%s" % repr(oSelf.__sb0Fragment)[1:]) if oSelf.__sb0Fragment is not None else "",
     ]);
