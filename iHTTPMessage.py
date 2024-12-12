@@ -103,7 +103,7 @@ class iHTTPMessage(object):
     a0sbBodyChunks = None,
     o0AdditionalHeaders = None,
     bAddContentLengthHeader = False,
-    bCloseConnection = False,
+    bAddConnectionCloseHeader = False,
   ):
     fAssertType("sbzVersion", sbzVersion, bytes, zNotProvided);
     fAssertType("o0zHeaders", o0zHeaders, cHTTPHeaders, None, zNotProvided); # None means no headers.
@@ -129,30 +129,34 @@ class iHTTPMessage(object):
       oSelf.oHeaders = cHTTPHeaders.foFromDict(dDefaultHeader_sbValue_by_sbName);
     
     bChunked = oSelf.oHeaders.fbHasUniqueValueForName(b"Transfer-Encoding", b"Chunked");
+    if bChunked:
+      assert sb0Body is None, \
+          "Cannot provide sb0Body (%s) with a \"Transfer-Encoding: Chunked\" header!" % repr(sb0Body);
+      assert not bAddContentLengthHeader, \
+          "Cannot provide bAddContentLengthHeader=True with a \"Transfer-Encoding: Chunked\" header!";
+    else:
+      assert a0sbBodyChunks is None, \
+            "Cannot provide a0sbBodyChunks (%s) without a \"Transfer-Encoding: Chunked\" header!" % repr(a0sbBodyChunks);
     if sb0Body is not None:
-      assert not bChunked, \
-            "Cannot provide sb0Body (%s) with a \"Transfer-Encoding: Chunked\" header!" % repr(sb0Body);
       oSelf.fSetBody(
         sb0Body,
         bAddContentLengthHeader = bAddContentLengthHeader,
-        bCloseConnection = bCloseConnection,
+        bAddConnectionCloseHeader = bAddConnectionCloseHeader,
+      );
+    elif a0sbBodyChunks is not None:
+      oSelf.fSetBodyChunks(
+        a0sbBodyChunks,
+        bAddConnectionCloseHeader = bAddConnectionCloseHeader,
+      );
+    elif s0Data is not None:
+      oSelf.fSetData(
+        s0Data,
+        bAddContentLengthHeader = bAddContentLengthHeader,
+        bAddConnectionCloseHeader = bAddConnectionCloseHeader,
       );
     else:
       oSelf.__sb0Body = None;
-      if a0sbBodyChunks:
-        assert bChunked, \
-              "Cannot provide a0sbBodyChunks (%s) without a \"Transfer-Encoding: Chunked\" header!" % repr(a0sbBodyChunks);
-        oSelf.__a0sbBodyChunks = a0sbBodyChunks[:];
-      elif s0Data is None:
-        if bChunked:
-          # If chunked encoding is enabled in the headers but no chunks or data is provided: default to an empty list.
-          oSelf.__a0sbBodyChunks = [];
-      else:
-        oSelf.fSetData(s0Data);
-      if bAddContentLengthHeader:
-        assert not bChunked, \
-              "Cannot provide bAddContentLengthHeader=True with a \"Transfer-Encoding: Chunked\" header!";
-        oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Length", b"%d" % len(oSelf.__sb0Body or b""));
+      oSelf.__a0sbBodyChunks = [] if bChunked else None;
         
     oSelf.o0AdditionalHeaders = o0AdditionalHeaders;
     # The sender can tell us the body is compressed using one algorithm but
@@ -293,8 +297,7 @@ class iHTTPMessage(object):
     sData,
     *,
     bAddContentLengthHeader = False,
-    bCloseConnection = False,
-    o0Connection = None,
+    bAddConnectionCloseHeader = False,
   ):
     # Convert Unicode string to bytes using the "charset" defined in the headers.
     # Then apply compression to the result and set it as the body of the message.
@@ -307,7 +310,6 @@ class iHTTPMessage(object):
       except ValueError as oException:
         raise cHTTPInvalidEncodedDataException(
           "The data contains non-byte characters.",
-          o0Connection = o0Connection,
           dxDetails = {"sData": sData},
         );
     else:
@@ -317,7 +319,6 @@ class iHTTPMessage(object):
       except UnicodeError as oException:
         raise cHTTPUnhandledCharsetException(
           "The charset provided in the Content-Type header is invalid.",
-          o0Connection = o0Connection,
           dxDetails = {"sbCharset": sb0Charset},
         );
       try:
@@ -325,20 +326,18 @@ class iHTTPMessage(object):
       except LookupError as oException:
         raise cHTTPUnhandledCharsetException(
           "The charset provided in the Content-Type header is unknown.",
-          o0Connection = o0Connection,
           dxDetails = {"sCharset": sCharset},
         );
       except UnicodeError as oException:
         raise cHTTPInvalidEncodedDataException(
           "The data cannot be encoded.",
-          o0Connection = o0Connection,
           dxDetails = {"sCharset": sCharset, "sData": sData},
         );
     # Sets the (optionally) compressed body of the message.
     oSelf.fApplyCompressionAndSetBody(
       sbUncompressedBody,
       bAddContentLengthHeader = bAddContentLengthHeader,
-      bCloseConnection = bCloseConnection,
+      bAddConnectionCloseHeader = bAddConnectionCloseHeader,
     );
   
   @property
@@ -405,7 +404,7 @@ class iHTTPMessage(object):
     sbData,
     *,
     bAddContentLengthHeader = False,
-    bCloseConnection = False,
+    bAddConnectionCloseHeader = False,
   ):
     fAssertType("sbData", sbData, bytes);
     # Sets the (optionally) compressed body of the message.
@@ -414,7 +413,7 @@ class iHTTPMessage(object):
     oSelf.fSetBody(
       sbData,
       bAddContentLengthHeader = bAddContentLengthHeader,
-      bCloseConnection = bCloseConnection,
+      bAddConnectionCloseHeader = bAddConnectionCloseHeader,
     );
   
   @property
@@ -433,15 +432,17 @@ class iHTTPMessage(object):
   def fSetBody(oSelf,
     sb0Body,
     *,
+    bRemoveTransferEncodingHeader = False,
     bAddContentLengthHeader = False,
-    bCloseConnection = False,
+    bAddConnectionCloseHeader = False,
   ):
-    oSelf.oHeaders.fbRemoveHeadersForName(b"Transfer-Encoding");
     oSelf.__sb0Body = sb0Body;
     oSelf.__a0sbBodyChunks = None;
+    if bRemoveTransferEncodingHeader:
+      oSelf.oHeaders.fbRemoveHeadersForName(b"Transfer-Encoding");
     if bAddContentLengthHeader:
       oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Length", b"%d" % len(oSelf.__sb0Body));
-    if bCloseConnection:
+    if bAddConnectionCloseHeader:
       oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Connection", b"Close");
   
   @property
@@ -452,34 +453,48 @@ class iHTTPMessage(object):
     return oSelf.__a0sbBodyChunks[:];
   
   @ShowDebugOutput
-  def fSetBodyChunks(oSelf, asbBodyChunks):
+  def fSetBodyChunks(oSelf,
+    asbBodyChunks,
+    bRemoveContentLengthHeader = False,
+    bAddTransferEncodingHeader = False,
+    bAddConnectionCloseHeader = False,
+  ):
+    fAssertType("asbBodyChunks", asbBodyChunks, [bytes]);
     for sbBodyChunk in asbBodyChunks:
-      assert sbBodyChunk, \
+      assert len(sbBodyChunk) > 0, \
           "Cannot add empty body chunks";
-    oSelf.oHeaders.fbRemoveHeadersForName(b"Content-Length");
-    oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Transfer-Encoding", b"Chunked");
     oSelf.__sb0Body = None;
     oSelf.__a0sbBodyChunks = asbBodyChunks[:];
+    if bRemoveContentLengthHeader:
+      oSelf.oHeaders.fbRemoveHeadersForName(b"Content-Length");
+    if bAddTransferEncodingHeader:
+      oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Transfer-Encoding", b"Chunked");
+    if bAddConnectionCloseHeader:
+      oSelf.oHeaders.fbReplaceHeadersForNameAndValue(b"Connection", b"Close");
   
   @ShowDebugOutput
   def fAddBodyChunk(oSelf, sbBodyChunk):
     fAssertType("sbBodyChunk", sbBodyChunk, bytes);
     assert len(sbBodyChunk) > 0, \
-        "Cannot add an empty chunk!"
-    if not oSelf.bChunked:
-      assert oSelf.__sb0Body is None, \
-          "Cannot add a chunk if body is set";
-      oSelf.fSetBodyChunks([sbBodyChunk]);
-    else:
-      oSelf.__a0sbBodyChunks.append(sbBodyChunk);
+        "Cannot add an empty body chunk!"
+    assert oSelf.bChunked, \
+        "Cannot add a chunk if not chunked is set";
+    oSelf.__a0sbBodyChunks.append(sbBodyChunk);
   
   @ShowDebugOutput
-  def fRemoveBody(oSelf):
-    oSelf.oHeaders.fbRemoveHeadersForName(b"Content-Encoding");
-    oSelf.oHeaders.fbRemoveHeadersForName(b"Content-Length");
-    oSelf.oHeaders.fbRemoveHeadersForName(b"Transfer-Encoding", b"Chunked");
+  def fRemoveBody(oSelf,
+    bRemoveContentEncodingHeader = False,
+    bRemoveContentLengthHeader = False,
+    bRemoveTransferEncodingHeader = False,
+  ):
     oSelf.__sb0Body = None;
     oSelf.__a0sbBodyChunks = None;
+    if bRemoveContentEncodingHeader:
+      oSelf.oHeaders.fbRemoveHeadersForName(b"Content-Encoding");
+    if bRemoveContentLengthHeader:
+      oSelf.oHeaders.fbRemoveHeadersForName(b"Content-Length");
+    if bRemoveTransferEncodingHeader:
+      oSelf.oHeaders.fbRemoveHeadersForName(b"Transfer-Encoding", b"Chunked");
   
   # application/x-www-form-urlencoded
   @property

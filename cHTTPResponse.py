@@ -89,9 +89,9 @@ class cHTTPResponse(iHTTPMessage):
     sb0Body = None,
     s0Data = None,
     a0sbBodyChunks = None,
-    bAddContentLengthHeader = False,
     o0AdditionalHeaders = None,
-    bCloseConnection = False,
+    bAddContentLengthHeader = False,
+    bAddConnectionCloseHeader = False,
   ):
     oSelf.uStatusCode = fxGetFirstProvidedValue(uzStatusCode, oSelf.uDefaultStatusCode);
     oSelf.sbReasonPhrase = (
@@ -104,9 +104,9 @@ class cHTTPResponse(iHTTPMessage):
       sb0Body = sb0Body,
       s0Data = s0Data,
       a0sbBodyChunks = a0sbBodyChunks,
-      bAddContentLengthHeader = bAddContentLengthHeader,
       o0AdditionalHeaders = o0AdditionalHeaders,
-      bCloseConnection = bCloseConnection,
+      bAddContentLengthHeader = bAddContentLengthHeader,
+      bAddConnectionCloseHeader = bAddConnectionCloseHeader,
     );
   
   @property
@@ -139,5 +139,5 @@ class cHTTPResponse(iHTTPMessage):
       a0sbBodyChunks = oSelf.asbBodyChunks if oSelf.bChunked else None,
       o0AdditionalHeaders = oSelf.o0AdditionalHeaders,
       bAddContentLengthHeader = False,
-      bCloseConnection = False,
+      bAddConnectionCloseHeader = False,
     );

@@ -10,7 +10,7 @@ def fTestResponse():
       o0zHeaders = cHTTPHeaders(),
       sb0Body = b"Body",
       bAddContentLengthHeader = False,
-      bCloseConnection = True,
+      bAddConnectionCloseHeader = True,
     ),
     cHTTPResponse(
       sbzVersion = b"HTTP/1.0",

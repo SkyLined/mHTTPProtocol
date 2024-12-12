@@ -101,9 +101,9 @@ class cHTTPRequest(iHTTPMessage):
       sb0Body = sb0Body,
       s0Data = s0Data,
       a0sbBodyChunks = a0sbBodyChunks,
-      bAddContentLengthHeader = bAddContentLengthHeader,
       o0AdditionalHeaders = o0AdditionalHeaders,
-      bCloseConnection = False,
+      bAddContentLengthHeader = bAddContentLengthHeader,
+      bAddConnectionCloseHeader = False,
     );
   
   @property
@@ -153,15 +153,16 @@ class cHTTPRequest(iHTTPMessage):
     sbzVersion = zNotProvided,
     uzStatusCode = zNotProvided,
     sbzReasonPhrase = zNotProvided,
+    *,
     o0zHeaders = zNotProvided,
     sb0Body = None,
     s0Data = None,
     a0sbBodyChunks = None,
-    bAddContentLengthHeader = False,
     sb0Charset = None,
     o0AdditionalHeaders = None,
     sb0MediaType = None,
-    bCloseConnection = False,
+    bAddContentLengthHeader = False,
+    bAddConnectionCloseHeader = False,
   ):
     oResponse = cHTTPResponse(
       sbzVersion = fxGetFirstProvidedValue(sbzVersion, oSelf.sbVersion),
@@ -171,9 +172,9 @@ class cHTTPRequest(iHTTPMessage):
       sb0Body = sb0Body,
       s0Data = s0Data,
       a0sbBodyChunks = a0sbBodyChunks,
-      bAddContentLengthHeader = bAddContentLengthHeader,
       o0AdditionalHeaders = o0AdditionalHeaders,
-      bCloseConnection = bCloseConnection,
+      bAddContentLengthHeader = bAddContentLengthHeader,
+      bAddConnectionCloseHeader = bAddConnectionCloseHeader,
     );
     if sb0MediaType or sb0Body or s0Data or a0sbBodyChunks:
       oResponse.sb0MediaType = sb0MediaType if sb0MediaType is not None else b"application/octet-stream";
