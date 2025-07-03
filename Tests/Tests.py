@@ -43,24 +43,37 @@ try:
   from fTestRequest import fTestRequest;
   from fTestResponse import fTestResponse;
   
+  bRunFullTests = False;
+  for sArgument in sys.argv[1:]:
+    if sArgument == "--full":
+      bRunFullTests = True;
+    elif sArgument == "--debug":
+      assert m0DebugOutput, \
+          "m0DebugOutput module is not available";
+      # Turn on debugging for various classes, including a few that are not directly exported.
+      import mHTTPProtocol;
+      m0DebugOutput.fEnableDebugOutputForModule(mHTTPProtocol);
+    else:
+      raise AssertionError("Unknown argument %s" % sArgument);
+
   # Test URLs
   oConsole.fOutput("\u2500\u2500\u2500 Testing cURL ", sPadding = "\u2500");
-  fTestURL();
+  fTestURL(bRunFullTests);
   oConsole.fOutput("+ Done.");
   
   # Test compression/decompression
   oConsole.fOutput("\u2500\u2500\u2500 Testing compression/decompression ", sPadding = "\u2500");
-  fTestCompression();
+  fTestCompression(bRunFullTests);
   oConsole.fOutput("+ Done.");
   
   # Test requests class
   oConsole.fOutput("\u2500\u2500\u2500 Testing cHTTPRequest ", sPadding = "\u2500");
-  fTestRequest();
+  fTestRequest(bRunFullTests);
   oConsole.fOutput("+ Done.");
 
   # Test response class
   oConsole.fOutput("\u2500\u2500\u2500 Testing cHTTPResponse ", sPadding = "\u2500");
-  fTestResponse();
+  fTestResponse(bRunFullTests);
   oConsole.fOutput("+ Done.");
 
 except Exception as oException:

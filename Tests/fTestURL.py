@@ -1,7 +1,7 @@
 from mHTTPProtocol import cURL;
-from mHTTPProtocol.cURL import grbProtocol, grbHostInURL;
+from mHTTPProtocol.mURL.cURL import grbProtocol, grbHostInURL;
 
-def fTestURL():
+def fTestURL(bRunFullTests):
   for sbProtocol in [b"http", b"https"]:
     assert grbProtocol.match(sbProtocol), \
         "grbHostInURL does not match %s" % repr(sbProtocol);
@@ -13,4 +13,3 @@ def fTestURL():
           for sbHash in [b"", b"#", b"#hash"]:
             sbURL = sbProtocol + b"://" + sbHost + sbPath + sbQuery + sbHash;
             oURL = cURL.foFromBytesString(sbURL);
-            print(oURL);

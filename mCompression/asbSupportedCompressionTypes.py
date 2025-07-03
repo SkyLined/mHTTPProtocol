@@ -1,0 +1,2 @@
+from .duDefaultCompressionLevel_by_sbSupportedCompressionTypes import duDefaultCompressionLevel_by_sbSupportedCompressionTypes;
+asbSupportedCompressionTypes = duDefaultCompressionLevel_by_sbSupportedCompressionTypes.keys();

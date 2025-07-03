@@ -1,22 +1,67 @@
 
-def fTestCompression():
-  from mHTTPProtocol.fsbCompressData import fsbCompressData;
-  from mHTTPProtocol.fsbDecompressData import fsbDecompressData;
-  
-  assert set(fsbCompressData.asbSupportedCompressionTypes) == set(fsbDecompressData.asbSupportedCompressionTypes), \
-      "fsbCompressData does not support the same compression types as fsbDecompressData:\nfsbCompressData: %s\nfsbDecompressData: %s" % (
-        repr(fsbCompressData.asbSupportedCompressionTypes),
-        repr(fsbDecompressData.asbSupportedCompressionTypes),
-      );
+def fTestCompression(bRunFullTests):
+  from mHTTPProtocol.mCompression import (
+    asbSupportedCompressionTypes,
+    fsbCompressDataUsingCompressionType,
+    fsbCompressDataUsingCompressionTypes,
+    fsbDecompressDataUsingCompressionType,
+    fsbDecompressDataUsingCompressionTypes,
+    ftxDecompressDataUsingExpectedCompressionTypesAndGetActualCompressionTypes,
+  );
   
   sbData = bytes(x for x in range(0x100));
   
-  for sCompressionType in fsbCompressData.asbSupportedCompressionTypes:
-    sbCompressedData = fsbCompressData(sbData, sCompressionType);
-    sbUncompressedData = fsbDecompressData(sbCompressedData, sCompressionType);
-    assert sbData == sbUncompressedData, \
+  for sbCompressionType in asbSupportedCompressionTypes:
+    sbCompressedData = fsbCompressDataUsingCompressionType(
+      sbData = sbData,
+      sbCompressionType = sbCompressionType,
+    );
+    sbDecompressedData = fsbDecompressDataUsingCompressionType(
+      sbData = sbCompressedData,
+      sbCompressionType = sbCompressionType,
+    );
+    assert sbData == sbDecompressedData, \
         "Compressing/decompressing data using %s resulted in different data!?\n%s\n%s" % (
-          repr(sCompressionType),
-          repr(sbData),
-          repr(sbUncompressedData),
+          repr(sCompressionType)[1:],
+          repr(sbData)[1:],
+          repr(sbDecompressedData)[1:],
         );
+  sbCompressedData = fsbCompressDataUsingCompressionTypes(
+    sbData = sbData,
+    asbCompressionTypes = asbSupportedCompressionTypes,
+  );
+  sbDecompressedData = fsbDecompressDataUsingCompressionTypes(
+    sbData = sbCompressedData,
+    asbCompressionTypes = asbSupportedCompressionTypes,
+  );
+  assert sbData == sbDecompressedData, \
+      "Compressing/decompressing data using %s resulted in different data!?\n%s\n%s" % (
+        "/".join([
+          repr(sbCompressionType)[1:]
+          for sbCompressionType in asbSupportedCompressionTypes
+        ]),
+        repr(sbData)[1:],
+        repr(sbDecompressedData)[1:],
+      );
+  
+  (sbDecompressedData, asbActualCompressionTypes) = ftxDecompressDataUsingExpectedCompressionTypesAndGetActualCompressionTypes(
+    sbData = sbCompressedData,
+    asbExpectedCompressionTypes = [],
+    bDataCanBeMoreCompressed = True,
+  );
+  assert sbData == sbDecompressedData, \
+      "Compressing/decompressing data without knowing compression resulted in different data!?\n%s\n%s" % (
+        repr(sbData)[1:],
+        repr(sbDecompressedData)[1:],
+      );
+  assert sbData == sbDecompressedData, \
+      "Compressing/decompressing data without knowing compression resulted in different compression types!?\n%s\n%s" % (
+        "/".join([
+          repr(sbCompressionType)[1:]
+          for sbCompressionType in asbSupportedCompressionTypes
+        ]),
+        "/".join([
+          repr(sbCompressionType)[1:]
+          for sbCompressionType in asbActualCompressionTypes
+        ]),
+      );

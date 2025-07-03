@@ -1,0 +1,92 @@
+﻿─── Testing cURL ──────────────────────────────────────────────────────────────
++ Done.
+─── Testing compression/decompression ─────────────────────────────────────────
++ Done.
+─── Testing cHTTPRequest ──────────────────────────────────────────────────────
+  0.9981│  A24│                             fTestRequest.py:8    ─╮ cHeaders.__init__(
+  0.9983│  A24│                                                   │   oSelf = <instance mHTTPProtocol.mHeaders.cHeaders:cHeaders ('cHeaders' object has no attribute '_cHeaders__aoHeaders') #1>
+  0.9984│  A24│                                                   │   aoHeaders = ???
+  0.9985│  A24│                                                   │ )
+  0.9987│  A24│                             fTestRequest.py:8    ─╯ return None; // duration = 0.000005s [cHeaders.__init__] 
+  0.9989│  A24│                             fTestRequest.py:4    ─╮ cHTTPRequest.__init__(
+  0.9990│  A24│                                                   │   oSelf = <mHTTPProtocol.cHTTPRequest#22B25D37CB0|'<uninitialized>' #1>
+  0.9991│  A24│                                                   │   sbURL = b'http://example.com'
+  0.9992│  A24│                                                   │   sbzMethod = b'GET'
+  0.9992│  A24│                                                   │   dxHTTPMessageConstructorArguments = ???
+  0.9994│  A24│                                                   │   **dxHTTPMessageConstructorArguments = {'sbzVersion': b'HTTP/1.0', 'o0zHeaders': <mHTTPProtocol.mHeaders.cHeaders#22B25D37A10|0 headers, 0 lines #2>, 'sbBody': b'Body 1'}#1
+  0.9995│  A24│                                                   │ )
+  0.9996│  A24│                             cHTTPRequest.py:74    ├─╮ iHTTPMessage.__init__(
+  0.9997│  A24│                                                   : │   oSelf = <mHTTPProtocol.cHTTPRequest#22B25D37CB0|'<uninitialized>' #1>
+  0.9998│  A24│                                                   : │   sbzVersion = b'HTTP/1.0'
+  0.9999│  A24│                                                   : │   o0zHeaders = <mHTTPProtocol.mHeaders.cHeaders#22B25D37A10|0 headers, 0 lines #1>
+  1.0000│  A24│                                                   : │   sbBody = b'Body 1'
+  1.0001│  A24│                                                   : │   bSetContentLengthHeader = ???
+  1.0002│  A24│                                                   : │ )
+  1.0004│  A24│                             iHTTPMessage.py:99    : ├─╮ iHTTPMessage.fSetBody(
+  1.0005│  A24│                                                   : : │   oSelf = <mHTTPProtocol.cHTTPRequest#22B25D37CB0|'<uninitialized>'|0 headers #1>
+  1.0006│  A24│                                                   : : │   sbData = b'Body 1'
+  1.0006│  A24│                                                   : : │   bRemoveChunkedEncodingHeaders = ???
+  1.0007│  A24│                                                   : : │   bSetContentLengthHeader = False
+  1.0008│  A24│                                                   : : │   bSetConnectionCloseHeader = ???
+  1.0008│  A24│                                                   : : │   bRemoveCompressionHeaders = ???
+  1.0009│  A24│                                                   : : │ )
+  1.0010│  A24│                             iHTTPMessage.py:99    : ├─╯ return None; // duration = 0.000011s [iHTTPMessage.fSetBody] 
+  1.0011│  A24│                             cHTTPRequest.py:74    ├─╯ return None; // duration = 0.000799s [iHTTPMessage.__init__] 
+  1.0012│  A24│                             fTestRequest.py:4    ─╯ return None; // duration = 0.001679s [cHTTPRequest.__init__] 
+  1.0014│  A24│                             fTestRequest.py:12   ─╮ iHTTPMessage.foClone(
+  1.0015│  A24│                                                   │   oSelf = <mHTTPProtocol.cHTTPRequest#22B25D37CB0|'GET http://example.com HTTP/1.0'|0 headers|6 bytes body #1>
+  1.0017│  A24│                                                   │   dxOverwrittenConstructorArguments = ???
+  1.0017│  A24│                                                   │   **dxOverwrittenConstructorArguments = {}#1
+  1.0018│  A24│                                                   │ )
+  1.0019│  A24│                                 cHeaders.py:120   ├─╮ cHeaders.__init__(
+  1.0020│  A24│                                                   : │   oSelf = <instance mHTTPProtocol.mHeaders.cHeaders:cHeaders ('cHeaders' object has no attribute '_cHeaders__aoHeaders') #1>
+  1.0021│  A24│                                                   : │   aoHeaders = []#1
+  1.0022│  A24│                                                   : │ )
+  1.0022│  A24│                                 cHeaders.py:120   ├─╯ return None; // duration = 0.000002s [cHeaders.__init__] 
+  1.0023│  A24│                             iHTTPMessage.py:107   ├─╮ cHTTPRequest.__init__(
+  1.0024│  A24│                                                   : │   oSelf = <mHTTPProtocol.cHTTPRequest#22B25F96850|'<uninitialized>' #1>
+  1.0025│  A24│                                                   : │   sbURL = b'http://example.com'
+  1.0025│  A24│                                                   : │   sbzMethod = b'GET'
+  1.0026│  A24│                                                   : │   dxHTTPMessageConstructorArguments = ???
+  1.0027│  A24│                                                   : │   **dxHTTPMessageConstructorArguments = {'sbxVersion': b'HTTP/1.0', 'o0zHeaders': <mHTTPProtocol.mHeaders.cHeaders#22B25F96710|0 headers, 0 lines #2>, 'sbBody': b'Body 1'}#1
+  1.0028│  A24│                                                   : │ )
+  1.0029│  A24│                             cHTTPRequest.py:74    : ├─╮ iHTTPMessage.__init__(
+  1.0030│  A24│                                                   : : │   oSelf = <mHTTPProtocol.cHTTPRequest#22B25F96850|'<uninitialized>' #1>
+  1.0031│  A24│                                                   : : │   sbzVersion = ???
+  1.0031│  A24│                                                   : : │   o0zHeaders = <mHTTPProtocol.mHeaders.cHeaders#22B25F96710|0 headers, 0 lines #1>
+  1.0032│  A24│                                                   : : │   sbBody = b'Body 1'
+  1.0033│  A24│                                                   : : │   bSetContentLengthHeader = ???
+  1.0034│  A24│                                                   : : │   sbxVersion??? = b'HTTP/1.0'
+  1.0035│  A24│                                                   : : │ )
+  1.0035│  A24│                          ShowDebugOutput.py:169   : :←✘ raise <instance builtins:TypeError TypeError("iHTTPMessage.__init__() got an unexpected keyword argument 'sbxVersion'. Did you mean 'sbzVersion'?") #1>; // [iHTTPMessage.__init__] duration = 0.000004s
+  1.0037│  A24│                             cHTTPRequest.py:74    :←✘ re-raise <instance builtins:TypeError TypeError("iHTTPMessage.__init__() got an unexpected keyword argument 'sbxVersion'. Did you mean 'sbzVersion'?") #1>; // [cHTTPRequest.__init__] duration = 0.000833s
+  1.0039│  A24│                             iHTTPMessage.py:107  ←✘ re-raise <instance builtins:TypeError TypeError("iHTTPMessage.__init__() got an unexpected keyword argument 'sbxVersion'. Did you mean 'sbzVersion'?") #1>; // [iHTTPMessage.foClone] duration = 0.002029s
+┌───[ Fatal builtins.TypeError Exception in thread 2596/0xA24 (MainThread) ]───
+│ iHTTPMessage.__init__() got an unexpected keyword argument 'sbxVersion'. Did you mean 'sbzVersion'?
+│ 
+│ Local variables:
+│   dxHTTPMessageConstructorArguments = {'sbxVersion': b'HTTP/1.0', 'o0zHeaders': <mHTTPProtocol.mHeaders.cHeaders#22B25F96710|0 headers, 0 lines #2>, 'sbBody': b'Body 1'}#1
+│   oSelf = <mHTTPProtocol.cHTTPRequest#22B25F96850|'<uninitialized>' #1>
+│   sbURL = b'http://example.com'
+│   sbzMethod = b'GET'
+│ 
+│ Stack for thread 2596/0xA24 (MainThread):
+│ ─┐ <module> @ C:\dev\mHTTPProtocol\Tests\Tests.py:68
+│  │ 67:  oConsole.fOutput("\u2500\u2500\u2500 Testing cHTTPRequest ", sPadding = "\u2500");
+│  │ 68:  fTestRequest();
+│  ├─┐ fTestRequest @ C:\dev\mHTTPProtocol\Tests\fTestRequest.py:12
+│  ╷ │ 11:  
+│  ╷ │ 12:  oRequest1x = oRequest1.foClone();
+│  ╷ ├─┐ foClone @ C:\dev\mHTTPProtocol\iHTTPMessage.py:107
+│  ╷ ╷ │ 106:    dxConstructorArguments = oSelf.fdxGetCloneConstructorArguments(**dxOverwrittenConstructorArguments);
+│  ╷ ╷ │ 107:    return oSelf.__class__(**dxConstructorArguments);
+│  ╷ ╷ ├─┐ __init__ @ C:\dev\mHTTPProtocol\cHTTPRequest.py:74
+│  ╷ ╷ ╷ │ 73:    });
+│  ╷ ╷ ╷ │ 74:    iHTTPMessage.__init__(oSelf, **dxHTTPMessageConstructorArguments);
+│  ╒═════╛ ▲ TypeError("iHTTPMessage.__init__() got an unexpected keyword argument 'sbxVersion'. Did you mean 'sbzVersion'?")
+│  │ <module> @ C:\dev\mHTTPProtocol\Tests\Tests.py:78
+│  │ 77:  if m0DebugOutput:
+│  │ 78:    m0DebugOutput.fTerminateWithException(oException, guExitCodeInternalError, bShowStacksForAllThread = True);
+│ ═╛ ▲ Application terminated because exception was not handled.
+└──────────────────────────────────────────────────────────────────────────────
+- Error 1!

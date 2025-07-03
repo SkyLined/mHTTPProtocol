@@ -1,49 +1,101 @@
-class cHTTPProtocolException(Exception):
-  def __init__(oSelf, sMessage, *, o0Connection = None, dxDetails = None):
-    assert isinstance(dxDetails, dict), \
-        "dxDetails must be a dict, not %s" % repr(dxDetails);
+class cProtocolException(Exception):
+  def __init__(oSelf,
+    sMessage: str,
+    *,
+    sbData: bytes,
+  ):
     oSelf.sMessage = sMessage;
-    oSelf.o0Connection = o0Connection;
-    oSelf.dxDetails = dxDetails;
-    Exception.__init__(oSelf, sMessage, o0Connection, dxDetails);
+    oSelf.sbData = sbData;
+    Exception.__init__(oSelf, sMessage, sbData);
   
-  def fasDetails(oSelf):
-    return (
-      (["Remote: %s" % str(oSelf.o0Connection.sbRemoteAddress, "ascii", "strict")] if oSelf.o0Connection else [])
-      + ["%s: %s" % (str(sName), repr(xValue)) for (sName, xValue) in oSelf.dxDetails.items()]
-    );
-  def __str__(oSelf):
+  def fasDetails(oSelf) -> list[str]:
+    return ["sbData: %s" % repr(oSelf.sbData)[1:]];
+  def __str__(oSelf) -> str:
     return "%s (%s)" % (oSelf.sMessage, ", ".join(oSelf.fasDetails()));
-  def __repr__(oSelf):
+  def __repr__(oSelf) -> str:
     return "<%s.%s %s>" % (oSelf.__class__.__module__, oSelf.__class__.__name__, oSelf);
 
-class cHTTPInvalidURLException(cHTTPProtocolException):
-  # Indicates that data does not contain a valid HTTP URL.
-  pass;
-
-class cHTTPInvalidMessageException(cHTTPProtocolException):
+## HTTP MESSAGE ################################################################
+class cInvalidMessageException(cProtocolException):
   # Indicates that data does not contain a valid HTTP Message.
   pass;
 
-class cHTTPInvalidEncodedDataException(cHTTPInvalidMessageException):
-  # Indicates that data compression or decompression using the compression
-  # technique specified in the "Content-Encoding" header of the http message
-  # failed, or that encoding from or decoding to Unicode using the character
-  # encoding technique specified in the "Content-Type" header failed.
-  # If no "charset" is provided, the data cannot be encoded because it contains
-  # Unicode characters that are not bytes (i.e. not in range '\x00'-'\xFF')
+## CHARACTER ENCODING ##########################################################
+class cCharsetValueException(cProtocolException):
   pass;
 
-class cHTTPUnhandledCharsetException(cHTTPInvalidMessageException):
-  # The "charset" provided in the "Content-Type" header of a HTTP message is
-  # not known, so the data cannot be decoded from or encoded to the message
-  # body.
+class cInvalidCharsetValueException(cCharsetValueException):
   pass;
 
-__all__ = [
-  "cHTTPInvalidMessageException",
-  "cHTTPInvalidEncodedDataException",
-  "cHTTPInvalidURLException",
-  "cHTTPProtocolException",
-  "cHTTPUnhandledCharsetException",
-];
+class cUnhandledCharsetValueException(cCharsetValueException):
+  pass;
+
+# En-/decoding errors have the same base class, but different subclasses.
+class cDataCodingWithCharsetException(cProtocolException):
+  def __init__(oSelf,
+    sMessage: str,
+    *,
+    sbData: bytes,
+    sb0Charset: bytes | None,
+  ):
+    oSelf.sb0Charset = sb0Charset;
+    cProtocolException.__init__(oSelf, sMessage, sbData = sbData);
+
+  def fasDetails(oSelf) -> list[str]:
+    return cProtocolException.fasDetails(oSelf) + [
+      "sb0Charset: %s" % repr(oSelf.sb0Charset)[1:] if oSelf.sb0Charset is not None else "None",
+    ];
+
+class cDataCannotBeDecodedWithCharsetException(cDataCodingWithCharsetException):
+  pass;
+
+class cDataCannotBeEncodedWithCharsetException(cDataCodingWithCharsetException):
+  pass;
+
+## CHUNKED ENCODING ############################################################
+class cInvalidChunkedDataException(cProtocolException):
+  pass;
+
+class cInvalidChunkHeaderException(cInvalidChunkedDataException):
+  pass;
+
+class cInvalidChunkSizeException(cInvalidChunkHeaderException):
+  pass;
+
+class cInvalidChunkBodyException(cInvalidChunkedDataException):
+  pass;
+
+class cInvalidTrailerException(cInvalidChunkedDataException):
+  pass;
+
+## COMPRESSION #################################################################
+# (De-)Compression errors have the same base class, but different subclasses.
+class cCompressionWithTypeException(cProtocolException):
+  def __init__(oSelf,
+    sMessage: str,
+    *,
+    sbData: bytes,
+    sbCompressionType: bytes | None,
+  ):
+    oSelf.sbCompressionType = sbCompressionType;
+    cProtocolException.__init__(oSelf, sMessage, sbData = sbData);
+
+  def fasDetails(oSelf) -> list[str]:
+    return cProtocolException.fasDetails(oSelf) + [
+      "sbCompressionType: %s" % repr(oSelf.sbCompressionType)[1:] if oSelf.sbCompressionType is not None else "None",
+    ];
+
+
+class cInvalidCompressedDataException(cCompressionWithTypeException):
+  pass;
+
+class cUnhandledCompressionTypeValueException(cCompressionWithTypeException):
+  pass;
+
+## HEADERS #####################################################################
+class cInvalidHeaderException(cProtocolException):
+  pass;
+
+### URL #######################################################################
+class cInvalidURLException(cProtocolException):
+  pass;
