@@ -227,6 +227,47 @@ grbRelativeURL = re.compile(
   rb"(?:\#(" + gsbFragmentRegExp + rb"))?"  #   optional { "#" (fragment) }
   rb"\Z"                                    # end of string
 );
+# Now create a second reg.exp. that allows anything that looks remotely like a
+# URL. String that match this are not technically valid URLs but they may be
+# close enough to be used and pass checks while triggering issues in the code
+# handling them.
+gsbInvalidUsernameRegExp    = rb"[^:@]*";   # Anything that's not start of password or host
+gsbInvalidPasswordRegExp    = rb"[^@]*";    # Anything that's not start of host
+gsbInvalidHostInURLRegExp   = rb"[^:/\?#]*";# Anything that's not start of port, path, query or fragment
+gsbInvalidPortNumberRegExp  = rb"[^/\?#]*"; # Anything that's not start of path, query or fragment
+gsbInvalidPathRegExp        = rb"[^\?#]*";  # Anything that's not start of query or fragment
+gsbInvalidQueryRegExp       = rb"[^#]*";    # Anything that's not start of fragment
+# There is not "invalid fragment" reg.exp. since the original is already allows
+# any bytes.
+grbInvalidURL = re.compile(
+  rb"\A"                                    # start of string
+  rb"(" + gsbProtocolRegExp + rb")://"      # (protocol) "://"
+  rb"(?:"                                   # optional {
+    rb"(" + gsbInvalidUsernameRegExp + rb")"#   (username)
+    rb"(?:"                                 #   optional {
+      rb"\:(" + gsbInvalidPasswordRegExp + rb")" # ":" (password)
+    rb")?"                                  #   }
+    rb"@"                                   #   "@"
+  rb")?"                                    # }
+  rb"(" + gsbInvalidHostInURLRegExp + rb")" # (host)
+  rb"(?:"                                   # optional {
+    rb"\:(" + gsbInvalidPortNumberRegExp + rb")"# ":" (port number)
+  rb")?"                                    # }
+  rb"(\/" + gsbInvalidPathRegExp + rb")?"   # optional { ("/" path) }
+  rb"(?:\?(" + gsbInvalidQueryRegExp + rb"))?" # optional { "?" (query) }
+  rb"(?:\#(" + gsbFragmentRegExp + rb"))?"  # optional { "#" (fragment) }
+  rb"\Z"                                    # end of string
+);
+grbInvalidRelativeURL = re.compile(
+  rb"\A"                                    # start of string
+  rb"(" + gsbInvalidPathRegExp + rb")?"            #   optional { (path) }
+  rb"(?:\?(" + gsbInvalidQueryRegExp + rb"))?"     #   optional { "?" (query) }
+  rb"(?:\#(" + gsbFragmentRegExp + rb"))?"  #   optional { "#" (fragment) }
+  rb"\Z"                                    # end of string
+);
+grbInvalidPath   = re.compile(rb"\A\/?" + gsbInvalidPathRegExp + rb"\Z");
+grbInvalidQuery  = re.compile(rb"\A\??" + gsbInvalidQueryRegExp + rb"\Z");
+  
 
 class cURL(object):
   sbProtocolRegExp    = gsbProtocolRegExp;
@@ -241,13 +282,15 @@ class cURL(object):
   @classmethod
   def foFromBytesString(cClass,
     sbURL: bytes,
+    bAllowInvalidURLs: bool = False,
   ) -> "cURL":
-    oURLMatch = grbURL.match(sbURL);
-    if not oURLMatch:
+    o0URLMatch = (grbInvalidURL if bAllowInvalidURLs else grbURL).match(sbURL); # grbURL.match(sbURL)
+    if o0URLMatch is None:
       raise cInvalidURLException(
-        "Invalid URL",
+        "Cannot parse URL",
         sbData = sbURL,
       );
+      # The URL is not technically valid but it is parsable.
     (
       sbProtocol,
       sb0Username,
@@ -257,7 +300,7 @@ class cURL(object):
       sb0Path,
       sb0Query,
       sb0Fragment,
-    ) = oURLMatch.groups();
+    ) = o0URLMatch.groups();
     return cClass(
       sbProtocol = sbProtocol,
       sb0Username = sb0Username,
@@ -267,6 +310,7 @@ class cURL(object):
       sb0Path = sb0Path,
       sb0Query = sb0Query,
       sb0Fragment = sb0Fragment,
+      bAllowInvalidURLs = bAllowInvalidURLs,
     );
   
   def __init__(oSelf,
@@ -284,7 +328,12 @@ class cURL(object):
     s0Query: str |  None = None, # will be URL encoded
     sb0Fragment: bytes |  None = None,
     s0Fragment: str |  None = None, # will be URL encoded
+    bAllowInvalidURLs: bool = False,
   ):
+    # We have to set this first because the setters for some of the properties
+    # need to check the value:
+    oSelf.bAllowInvalidURLs = bAllowInvalidURLs;
+    
     oSelf.sbProtocol = sbProtocol;
     
     if s0Username is not None:
@@ -325,20 +374,28 @@ class cURL(object):
       oSelf.s0Fragment = s0Fragment;
     else:
       oSelf.sb0Fragment = sb0Fragment;
-  
+
   def foFromAbsoluteOrRelativeBytesString(oSelf,
-    sbURL: bytes
+    sbURL: bytes,
+    bAllowInvalidURLs: bool = None,
   ) -> "cURL":
+    # If not provided, that value of the base URL is used:
+    if bAllowInvalidURLs is None:
+      bAllowInvalidURLs = oSelf.bAllowInvalidURLs;
     # Check if it is not an absolute URL:
     try:
-      return cURL.foFromBytesString(sbURL);
+      return cURL.foFromBytesString(sbURL, bAllowInvalidURLs);
     except cInvalidURLException:
-      return oSelf.foFromRelativeBytesString(sbURL);
+      return oSelf.foFromRelativeBytesString(sbURL, bAllowInvalidURLs);
   
   def foFromRelativeBytesString(oSelf,
-    sbURL: bytes
+    sbURL: bytes,
+    bAllowInvalidURLs: bool = None,
   ) -> "cURL":
-    o0RelativeURLMatch = grbRelativeURL.match(sbURL);
+    # If not provided, that value of the base URL is used:
+    if bAllowInvalidURLs is None:
+      bAllowInvalidURLs = oSelf.bAllowInvalidURLs;
+    o0RelativeURLMatch = (grbInvalidRelativeURL if bAllowInvalidURLs else grbRelativeURL).match(sbURL); # grbRelativeURL.match(sbURL);
     if not o0RelativeURLMatch:
       raise cInvalidURLException(
         "Invalid relative URL",
@@ -515,7 +572,7 @@ class cURL(object):
   def sbPath(oSelf,
     sbPath: bytes,
   ):
-    assert grbPath.match(sbPath), \
+    assert (grbInvalidPath if oSelf.bAllowInvalidURLs else grbPath).match(sbPath), \
         "sbPath is not a valid path (%s)" % (repr(sbPath),);
     # Automatically add "/" prefix if missing.
     oSelf.__sbPath = (b"/" if (sbPath[:1] != b"/") else b"") + sbPath;
@@ -551,7 +608,7 @@ class cURL(object):
     sb0Query: bytes | None,
   ):
     if sb0Query is not None:
-      assert grbQuery.match(sb0Query), \
+      assert (grbInvalidQuery if oSelf.bAllowInvalidURLs else grbQuery).match(sb0Query), \
           "sb0Query is not a valid query (%s)" % (repr(sb0Query),);
     oSelf.__sb0Query = sb0Query;
   
@@ -569,7 +626,7 @@ class cURL(object):
     sQuery: str,
   ):
     sbQuery = fsbURLEncode(sQuery);
-    assert grbQuery.match(sbQuery), \
+    assert (grbInvalidQuery if oSelf.bAllowInvalidURLs else grbQuery).match(sbQuery), \
         "sQuery (%s) does not encode to a valid query (%s)" % (repr(sQuery), repr(sbQuery));
     oSelf.__sb0Query = sbQuery;
   
@@ -683,6 +740,14 @@ class cURL(object):
   def fsSerialize(oSelf) -> str:
     return str(oSelf.fsbSerialize(), 'ascii', 'strict');
   
+  def fbIsValid(oSelf) -> bool:
+    # returns true as long as the serialized URL is technically valid, even
+    # if the individual components stored in the various properties of the
+    # object are not. Returning True means that if you serialize and deserialize
+    # the object, you would get a cURL instance with valid properties, which
+    # may differ from this object.
+    return grbURL.match(oSelf.fsbSerialize()) is not None;
+
   def fasGetDetails(oSelf) -> list[str]:
     return [
       "sbProtocol: %s" % repr(oSelf.__sbProtocol)[1:],
