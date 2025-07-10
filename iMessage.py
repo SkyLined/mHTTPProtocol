@@ -873,58 +873,28 @@ class iMessage(object):
   @property
   @ShowDebugOutput
   def d0JSON_sValue_by_sName(oSelf):
-    # convert the decoded and decompressed body to form name-value pairs.
-    s0Data = oSelf.fs0GetData(bRemoveCompression = True);
+    # convert the decoded and decompressed body to JSON name-value pairs.
+    s0Data = oSelf.fsGetDecodedAndDecompressedBody();
     if s0Data is None:
       return None;
     try:
-      xJSONData = json.parse(s0Data);
+      xJSONData = json.loads(s0Data);
     except ValueError:
       return None;
     if not isinstance(xJSONData, dict):
       return None;
     return xJSONData;
-
+  # setter only
   @ShowDebugOutput
-  def fs0GetJSONValue(oSelf,
-    sName: str,
-  ) -> str | None:
-    fAssertTypes({
-      "sName": (sName, str),
-    });
-    # convert the decoded and decompressed body to form name-value pairs and return the value for the given name
-    # or None if there is no such value.
-    d0JSON_sValue_by_sName = oSelf.d0JSON_sValue_by_sName;
-    if d0JSON_sValue_by_sName is None or not isinstance(dForm_sValue_by_sName, dict):
-      return None;
-    dForm_sValue_by_sName = d0JSON_sValue_by_sName;
-    return dForm_sValue_by_sName.get(sName);
-  
-  @ShowDebugOutput
-  def fSetJSONValue(oSelf,
-    sName: str,
-    xValue: str | float | bool | list | dict | None,
+  def dJSON_sValue_by_sName(oSelf,
+    dJSON_sValue_by_sName: dict,
   ):
-    fAssertTypes({
-      "sName": (sName, str),
-      "xValue": (xValue, str, float, bool, list, dict, None),
-    });
-    # Convert the decoded and decompressed body to form name-value pairs,
-    # remove all existing values with the given name,
-    # if the value is not None, add the new named value,
-    # and update the optionally compressed body to match.
-    d0JSON_sValue_by_sName = oSelf.d0JSON_sValue_by_sName;
-    if d0JSON_sValue_by_sName is None:
-      dJSON_sValue_by_sName = {};
-      if not oSelf.fbHasContentTypeHeader():
-        oSelf.fSetContentTypeHeader(
-          sbMediaType = b"application/json",
-          sb0Charset = b"utf-8",
-          sb0Boundary = None,
-        );
-    else:
-      dJSON_sValue_by_sName = d0JSON_sValue_by_sName;
-    dJSON_sValue_by_sName[sName] = xValue;
+    if not oSelf.fbHasContentTypeHeader():
+      oSelf.fSetContentTypeHeader(
+        sbMediaType = b"application/json",
+        sb0Charset = b"utf-8",
+        sb0Boundary = None,
+      );
     sData = json.dumps(dJSON_sValue_by_sName);
     oSelf.fEncodeCompressedAndSetBody(
       sData,
@@ -933,6 +903,56 @@ class iMessage(object):
         or (not oSelf.fbHasConnectionCloseHeader() and not oSelf.fbHasChunkedEncodingHeader())
       ),
     );
+  dJSON_sValue_by_sName = property(None, dJSON_sValue_by_sName);
+
+  @ShowDebugOutput
+  def fs0HasJSONValue(oSelf,
+    sName: str,
+  ) -> str | None:
+    fAssertTypes({
+      "sName": (sName, str),
+    });
+    # Deserialize the decoded and decompressed body to JSON, and if it is a
+    # dict, return True if the dict contains the given name.
+    d0JSON_sValue_by_sName = oSelf.d0JSON_sValue_by_sName;
+    if d0JSON_sValue_by_sName is None or not isinstance(d0JSON_sValue_by_sName, dict):
+      return False;
+    return sName in d0JSON_sValue_by_sName;
+  
+  @ShowDebugOutput
+  def fs0GetJSONValue(oSelf,
+    sName: str,
+  ) -> str | None:
+    fAssertTypes({
+      "sName": (sName, str),
+    });
+    # Deserialize the decoded and decompressed body to JSON, and if it is a
+    # dict, return the value for the given name or None if there is no such
+    # value.
+    d0JSON_sValue_by_sName = oSelf.d0JSON_sValue_by_sName;
+    if d0JSON_sValue_by_sName is None or not isinstance(d0JSON_sValue_by_sName, dict):
+      return None;
+    return d0JSON_sValue_by_sName.get(sName);
+  
+  @ShowDebugOutput
+  def fSetJSONValue(oSelf,
+    sName: str,
+    xValue: bool | dict | float | int | list | None | str,
+  ):
+    fAssertTypes({
+      "sName": (sName, str),
+      "xValue": (xValue, bool, dict, float, int, list, None, str),
+    });
+    # Deserialize the decoded and decompressed body to JSON, remove all
+    # existing values with the given name, add the new named value, then
+    # serialize the JSON and update the optionally compressed body.
+    d0JSON_sValue_by_sName = oSelf.d0JSON_sValue_by_sName;
+    if d0JSON_sValue_by_sName is None:
+      dJSON_sValue_by_sName = {};
+    else:
+      dJSON_sValue_by_sName = d0JSON_sValue_by_sName;
+    dJSON_sValue_by_sName[sName] = xValue;
+    oSelf.dJSON_sValue_by_sName = dJSON_sValue_by_sName;
   
   ## Authorization HEADER ######################################################
   @ShowDebugOutput

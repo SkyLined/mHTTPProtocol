@@ -69,6 +69,37 @@ def fTestRequest(bRunFullTests):
     bSetContentLengthHeader = True,
   );
   
+  oJSONRequest = cRequest(
+    sbURL = b"http://example.com",
+  );
+  d0xJSON = oJSONRequest.d0JSON_sValue_by_sName;
+  assert d0xJSON is None, \
+      repr(d0xJSON);
+  oJSONRequest.fSetJSONValue("array", []);
+  oJSONRequest.fSetJSONValue("boolean", True);
+  oJSONRequest.fSetJSONValue("float", 0.1);
+  oJSONRequest.fSetJSONValue("null", None);
+  oJSONRequest.fSetJSONValue("number", 1);
+  oJSONRequest.fSetJSONValue("object", {});
+  oJSONRequest.fSetJSONValue("string", "s");
+  d0xJSON = oJSONRequest.d0JSON_sValue_by_sName;
+  assert d0xJSON is not None, \
+      repr(d0xJSON);
+  dxJSON = d0xJSON;
+  assert dxJSON["array"] == [], \
+      repr(dxJSON);
+  assert dxJSON["boolean"] == True, \
+      repr(dxJSON);
+  assert dxJSON["float"] == 0.1, \
+      repr(dxJSON);
+  assert dxJSON["null"] == None, \
+      repr(dxJSON);
+  assert dxJSON["number"] == 1, \
+      repr(dxJSON);
+  assert dxJSON["object"] == {}, \
+      repr(dxJSON);
+  assert dxJSON["string"] == "s", \
+      repr(dxJSON);
   
   for (sExpectedData, oRequest) in {
     "Body 1": oRequest1,
@@ -79,6 +110,7 @@ def fTestRequest(bRunFullTests):
     "Body chunked 1c": oChunkedRequest1c,
     "Body dechunked": oDechunkedRequest,
     "Body 3": oRequest3,
+    '{"array": [], "boolean": true, "float": 0.1, "null": null, "number": 1, "object": {}, "string": "s"}': oJSONRequest,
   }.items():
     sData = oRequest.fsGetDecodedAndDecompressedBody();
     assert sData == sExpectedData, \
