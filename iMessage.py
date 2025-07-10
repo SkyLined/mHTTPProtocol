@@ -845,7 +845,12 @@ class iMessage(object):
     fAssertTypes({
       "ds0FormValue_by_sName": (ds0FormValue_by_sName, dict),
     });
-    sData = fsEncodedFormNameValuePairs(ds0FormValue_by_sName);
+    if not oSelf.fbHasContentTypeHeader():
+      oSelf.fSetContentTypeHeader(
+        sbMediaType = b"application/x-www-form-urlencoded",
+        sb0Charset = None,
+        sb0Boundary = None,
+      );    sData = fsEncodedFormNameValuePairs(ds0FormValue_by_sName);
     oSelf.fEncodeCompressedAndSetBody(
       sData,
       bSetContentLengthHeader = (
