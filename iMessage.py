@@ -874,9 +874,6 @@ class iMessage(object):
   @ShowDebugOutput
   def d0JSON_sValue_by_sName(oSelf):
     # convert the decoded and decompressed body to form name-value pairs.
-    sb0MediaType = oSelf.sb0MediaType;
-    if sb0MediaType is None or sb0MediaType.lower() != b"application/json":
-      return None;
     s0Data = oSelf.fs0GetData(bRemoveCompression = True);
     if s0Data is None:
       return None;
