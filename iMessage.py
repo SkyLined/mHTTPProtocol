@@ -915,12 +915,13 @@ class iMessage(object):
     # and update the optionally compressed body to match.
     d0JSON_sValue_by_sName = oSelf.d0JSON_sValue_by_sName;
     if d0JSON_sValue_by_sName is None:
-      oSelf.fSetContentTypeHeader(
-        sbMediaType = b"application/json",
-        sb0Charset = b"utf-8",
-        sb0Boundary = None
-      );
       dJSON_sValue_by_sName = {};
+      if not oSelf.fbHasContentTypeHeader():
+        oSelf.fSetContentTypeHeader(
+          sbMediaType = b"application/json",
+          sb0Charset = b"utf-8",
+          sb0Boundary = None,
+        );
     else:
       dJSON_sValue_by_sName = d0JSON_sValue_by_sName;
     dJSON_sValue_by_sName[sName] = xValue;
